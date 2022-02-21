@@ -12,10 +12,12 @@ COPY pom.xml .
 
 RUN tr -d '\015' <./mvnw >./mvnw.sh && mv ./mvnw.sh ./mvnw && chmod 770 mvnw
 
-RUN ./mvnw install
+RUN ./mvnw package
 
 FROM openjdk:15-oracle
 VOLUME /tmp
+
+EXPOSE 8000
 
 ARG JAR_FILE=/workspace/app/whiteRabbitService/target/*.jar
 COPY --from=build ${JAR_FILE} app.jar
