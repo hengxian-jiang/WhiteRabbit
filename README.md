@@ -21,7 +21,7 @@ Getting Started
 ===============
 
     docker build -t white-rabbit-service .
-    docker run --name white-rabbit-service -d --network host white-rabbit-service
+    docker run --name white-rabbit-service -d -p 8000:8000 white-rabbit-service
 
 License
 =======
