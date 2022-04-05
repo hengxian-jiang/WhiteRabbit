@@ -29,8 +29,8 @@ files-manager-url: http://files-manager:10500/files-manager
 
 fake-data-db:
   db-type: PostgreSQL
-  server: jnjcicdu1
-  port: 5431
-  database: cdm_souffleur
-  user: postgres
-  password: 5eC_DkMr^3
+  server: perseusdb
+  port: 5433
+  database: perseus
+  user: perseus
+  password: password
