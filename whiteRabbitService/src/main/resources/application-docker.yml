@@ -30,7 +30,7 @@ files-manager-url: http://files-manager:10500/files-manager
 fake-data-db:
   db-type: PostgreSQL
   server: perseusdb
-  port: 5431
+  port: 5433
   database: perseus
   user: perseus
   password: password
