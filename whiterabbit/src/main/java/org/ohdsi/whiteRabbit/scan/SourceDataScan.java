@@ -35,8 +35,7 @@ import org.ohdsi.utilities.collections.CountingSet;
 import org.ohdsi.utilities.collections.CountingSet.Count;
 import org.ohdsi.utilities.collections.Pair;
 import org.ohdsi.utilities.files.ReadTextFile;
-import org.ohdsi.whiteRabbit.CanInterrupt;
-import org.ohdsi.whiteRabbit.DbSettings;
+import org.ohdsi.whiteRabbit.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,7 +51,7 @@ import java.util.stream.Collectors;
 import static java.lang.Long.max;
 import static org.ohdsi.whiteRabbit.scan.SchemaUtil.adaptSchemaNameForPostgres;
 
-public class SourceDataScan implements CanInterrupt {
+public class SourceDataScan {
 
 	public static int	MAX_VALUES_IN_MEMORY				= 100000;
 	public static int	MIN_CELL_COUNT_FOR_CSV				= 1000000;
@@ -77,12 +76,18 @@ public class SourceDataScan implements CanInterrupt {
 	private LocalDateTime startTimeStamp;
 
 	private Logger logger = new ConsoleLogger();
+	private Interrupter interrupter = new ThreadInterrupter();
 
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
 
+	public void setInterrupter(Interrupter interrupter) {
+		this.interrupter = interrupter;
+	}
+
 	public void setSampleSize(int sampleSize) {
+		// -1 if sample size is not restricted
 		this.sampleSize = sampleSize;
 	}
 
@@ -113,13 +118,17 @@ public class SourceDataScan implements CanInterrupt {
 		database = dbSettings.database;
 
 		tableToFieldInfos = new HashMap<>();
-		logger.logWithTime("Started new scan of " + dbSettings.tables.size() + " tables...");
+		int tablesCount = dbSettings.tables.size();
+		logger.setItemsCount(tablesCount);
+		logger.info("Started new scan of " + dbSettings.tables.size() + " tables...");
 		if (sourceType == DbSettings.SourceType.CSV_FILES) {
 			if (!scanValues)
 				this.minCellCount = Math.max(minCellCount, MIN_CELL_COUNT_FOR_CSV);
 			processCsvFiles(dbSettings);
 		} else if (sourceType == DbSettings.SourceType.SAS_FILES) {
-			processSasFiles(dbSettings);
+			throw new UnsupportedOperationException("SAS files does not support");
+			// after implementing support must configure logging
+			// processSasFiles(dbSettings);
 		} else {
 			isFile = false;
 			processDatabase(dbSettings);
@@ -139,7 +148,10 @@ public class SourceDataScan implements CanInterrupt {
 			connection.use(adaptSchemaNameForPostgres(dbSettings, dbSettings.database));
 
 			for (String table : dbSettings.tables) {
+				interrupter.checkWasInterrupted();
 				tableToFieldInfos.put(new Table(table), processDatabaseTable(table, connection));
+				logger.incrementScannedItems();
+				logger.info("Scanned table " + table);
 			}
 		}
 	}
@@ -147,13 +159,17 @@ public class SourceDataScan implements CanInterrupt {
 	private void processCsvFiles(DbSettings dbSettings) throws InterruptedException {
 		delimiter = dbSettings.delimiter;
 		for (String fileName : dbSettings.tables) {
+			interrupter.checkWasInterrupted();
 			Table table = new Table();
 			table.setName(new File(fileName).getName());
 			List<FieldInfo> fieldInfos = processCsvFile(fileName);
 			tableToFieldInfos.put(table, fieldInfos);
+			logger.incrementScannedItems();
+			logger.info("Scanned file " + StringUtilities.getFileNameBYFullName(fileName));
 		}
 	}
 
+	@Deprecated
 	private void processSasFiles(DbSettings dbSettings) throws InterruptedException {
 		for (String fileName : dbSettings.tables) {
 			try(FileInputStream inputStream = new FileInputStream(new File(fileName))) {
@@ -164,7 +180,7 @@ public class SourceDataScan implements CanInterrupt {
 				table.setName(new File(fileName).getName());
 				table.setComment(sasFileProperties.getName());
 
-				logger.logWithTime("Scanning table " + StringUtilities.getFileNameBYFullName(fileName));
+				logger.info("Scanning table " + StringUtilities.getFileNameBYFullName(fileName));
 				List<FieldInfo> fieldInfos = processSasFile(sasFileReader);
 				tableToFieldInfos.put(table, fieldInfos);
 
@@ -176,7 +192,7 @@ public class SourceDataScan implements CanInterrupt {
 	}
 
 	private void generateReport(String filename) {
-		logger.logWithTime("Generating scan report");
+		logger.info("Generating scan report");
 		removeEmptyTables();
 
 		workbook = new SXSSFWorkbook(100); // keep 100 rows in memory, exceeding rows will be flushed to disk
@@ -201,8 +217,9 @@ public class SourceDataScan implements CanInterrupt {
 		try (FileOutputStream out = new FileOutputStream(new File(filename))) {
 			workbook.write(out);
 			out.close();
-			logger.logWithTime("Scan report generated");
+			logger.info("Scan report generated");
 		} catch (IOException ex) {
+			logger.error(ex.getMessage());
 			throw new RuntimeException(ex.getMessage());
 		}
 	}
@@ -400,8 +417,8 @@ public class SourceDataScan implements CanInterrupt {
 				.removeIf(stringListEntry -> stringListEntry.getValue().size() == 0);
 	}
 
-	private List<FieldInfo> processDatabaseTable(String table, RichConnection connection) throws InterruptedException {
-		logger.logWithTime("Scanning table " + table);
+	private List<FieldInfo> processDatabaseTable(String table, RichConnection connection) {
+		logger.info("Scanning table " + table);
 
 		long rowCount = connection.getTableSize(table);
 		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table);
@@ -414,17 +431,14 @@ public class SourceDataScan implements CanInterrupt {
 					for (FieldInfo fieldInfo : fieldInfos) {
 						fieldInfo.processValue(row.get(fieldInfo.name));
 					}
-					checkWasInterrupted();
 					actualCount++;
 					if (sampleSize != -1 && actualCount >= sampleSize) {
-						logger.log("Stopped after " + actualCount + " rows");
+						logger.warning("Stopped after " + actualCount + " rows");
 						break;
 					}
 				}
 				for (FieldInfo fieldInfo : fieldInfos)
 					fieldInfo.trim();
-			} catch (InterruptedException e) {
-				throw e;
 			} catch (Exception e) {
 				logger.error("Error: " + e.getMessage());
 			} finally {
@@ -538,8 +552,8 @@ public class SourceDataScan implements CanInterrupt {
 		return fieldInfos;
 	}
 
-	private List<FieldInfo> processCsvFile(String filename) throws InterruptedException {
-		logger.logWithTime("Scanning table " + StringUtilities.getFileNameBYFullName(filename));
+	private List<FieldInfo> processCsvFile(String filename) {
+		logger.info("Scanning file " + StringUtilities.getFileNameBYFullName(filename));
 		List<FieldInfo> fieldInfos = new ArrayList<>();
 		int lineNr = 0;
 		for (String line : new ReadTextFile(filename)) {
@@ -568,10 +582,8 @@ public class SourceDataScan implements CanInterrupt {
 					}
 				}
 			}
-			if (lineNr > sampleSize)
+			if (sampleSize != -1 && lineNr > sampleSize)
 				break;
-
-			checkWasInterrupted();
 		}
 		for (FieldInfo fieldInfo : fieldInfos)
 			fieldInfo.trim();
@@ -593,25 +605,27 @@ public class SourceDataScan implements CanInterrupt {
 				fieldInfo.maxLength = column.getLength();
 			}
 			fieldInfos.add(fieldInfo);
-
-			checkWasInterrupted();
+			interrupter.checkWasInterrupted();
 		}
 
 		if (!scanValues) {
 			return fieldInfos;
 		}
 
-		for (int lineNr = 0; lineNr < sasFileProperties.getRowCount() && lineNr < sampleSize; lineNr++) {
+		for (int lineNr = 0; lineNr < sasFileProperties.getRowCount(); lineNr++) {
 			Object[] row = sasFileReader.readNext();
 
 			if (row.length != fieldInfos.size()) {
-				logger.logWithTime("WARNING: row " + lineNr + " not scanned due to field count mismatch.");
+				logger.warning("WARNING: row " + lineNr + " not scanned due to field count mismatch.");
 				continue;
 			}
 
 			for (int i = 0; i < row.length; i++) {
 				fieldInfos.get(i).processValue(row[i] == null ? "" : row[i].toString());
 			}
+
+			if (sampleSize != -1 && lineNr >= sampleSize)
+				break;
 		}
 
 		for (FieldInfo fieldInfo : fieldInfos) {

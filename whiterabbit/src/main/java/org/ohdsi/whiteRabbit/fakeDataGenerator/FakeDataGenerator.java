@@ -22,20 +22,21 @@ import org.ohdsi.rabbitInAHat.dataModel.Database;
 import org.ohdsi.rabbitInAHat.dataModel.Field;
 import org.ohdsi.rabbitInAHat.dataModel.Table;
 import org.ohdsi.rabbitInAHat.dataModel.ValueCounts;
-import org.ohdsi.utilities.ConsoleLogger;
-import org.ohdsi.utilities.Logger;
+import org.ohdsi.whiteRabbit.ConsoleLogger;
+import org.ohdsi.whiteRabbit.Logger;
 import org.ohdsi.utilities.StringUtilities;
 import org.ohdsi.utilities.files.Row;
 import org.ohdsi.utilities.files.WriteCSVFileWithHeader;
-import org.ohdsi.whiteRabbit.CanInterrupt;
+import org.ohdsi.whiteRabbit.Interrupter;
 import org.ohdsi.whiteRabbit.DbSettings;
+import org.ohdsi.whiteRabbit.ThreadInterrupter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class FakeDataGenerator implements CanInterrupt {
+public class FakeDataGenerator {
 
 	private RichConnection connection;
 	private int maxRowsPerTable = 1000;
@@ -46,40 +47,53 @@ public class FakeDataGenerator implements CanInterrupt {
 	private static int PRIMARY_KEY = 2;
 
 	private Logger logger = new ConsoleLogger();
+	private Interrupter interrupter = new ThreadInterrupter();
 
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
 
+	public void setInterrupter(Interrupter interrupter) {
+		this.interrupter = interrupter;
+	}
+
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling) throws InterruptedException, SQLException {
+							 boolean doUniformSampling) throws InterruptedException {
 		generateData(dbSettings, maxRowsPerTable, filename, folder, doUniformSampling,
 				null, true);
 	}
 
 	/* Schema name can be null */
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException, SQLException {
+							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException {
 		this.maxRowsPerTable = maxRowsPerTable;
 		DbSettings.SourceType targetType = dbSettings.sourceType;
 		this.doUniformSampling = doUniformSampling;
 
-		logger.logWithTime("Starting creation of fake data");
+		logger.info("Starting creation of fake data");
 
 		Database database = Database.generateModelFromScanReport(filename, schemaName);
+		logger.setItemsCount(database.getTables().size());
 
 		if (targetType == DbSettings.SourceType.DATABASE) {
 			connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType);
 			connection.use(dbSettings.database);
 			for (Table table : database.getTables()) {
+				interrupter.checkWasInterrupted();
 				if (table.getName().toLowerCase().endsWith(".csv"))
 					table.setName(table.getName().substring(0, table.getName().length() - 4));
-				logger.logWithTime("Generating table " + table.getName());
-				checkWasInterrupted();
+				logger.info("Generating table " + table.getName());
 				if (createTables) {
 					createTable(table);
 				}
-				connection.insertIntoTable(generateRows(table).iterator(), table.getName(), false);
+				try {
+					connection.insertIntoTable(generateRows(table).iterator(), table.getName(), false);
+					logger.incrementScannedItems();
+					logger.info("Generated table " + table.getName());
+				} catch (SQLException e) {
+					connection.close();
+					throw new RuntimeException(e);
+				}
 			}
 			connection.close();
 		} else {
@@ -87,14 +101,14 @@ public class FakeDataGenerator implements CanInterrupt {
 				String name = folder + "/" + table.getName();
 				if (!name.toLowerCase().endsWith(".csv"))
 					name = name + ".csv";
-				logger.logWithTime("Generating table " + name);
+				logger.info("Generating table " + name);
 				WriteCSVFileWithHeader out = new WriteCSVFileWithHeader(name, dbSettings.csvFormat);
 				for (Row row : generateRows(table))
 					out.write(row);
 				out.close();
 			}
 		}
-		logger.logWithTime("Fake data successfully generated");
+		logger.info("Fake data successfully generated");
 	}
 
 	private List<Row> generateRows(Table table) {

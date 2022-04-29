@@ -1,4 +1,4 @@
-FROM openjdk:15-oracle as build
+FROM openjdk:17 as build
 WORKDIR /workspace/app
 
 COPY rabbit-core rabbit-core
@@ -12,9 +12,9 @@ COPY pom.xml .
 
 RUN tr -d '\015' <./mvnw >./mvnw.sh && mv ./mvnw.sh ./mvnw && chmod 770 mvnw
 
-RUN ./mvnw install
+RUN ./mvnw package
 
-FROM openjdk:15-oracle
+FROM openjdk:17
 VOLUME /tmp
 
 ARG JAR_FILE=/workspace/app/whiteRabbitService/target/*.jar

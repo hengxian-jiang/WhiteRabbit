@@ -1,15 +1,12 @@
 package com.arcadia.whiteRabbitService.service;
 
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public interface StorageService {
+    String store(MultipartFile file, String directory, String fileName) throws IOException;
 
-    void store(MultipartFile file, String name);
-
-    Resource loadAsResource(String name) throws FileNotFoundException;
-
-    boolean delete(String name);
+    String store(ByteArrayResource resource, String directory, String fileName) throws IOException;
 }
