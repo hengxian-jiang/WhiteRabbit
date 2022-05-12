@@ -32,7 +32,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Slf4j
 public class ScanDataServiceImpl implements ScanDataService {
     private final ScanDataConversionRepository conversionRepository;
-    private final ScanDataConversionService conversionService;
     private final StorageService storageService;
     private final ScanDataLogRepository logRepository;
     private final ScanDataResultRepository resultRepository;
@@ -48,8 +47,8 @@ public class ScanDataServiceImpl implements ScanDataService {
     }
 
     @Transactional
-    public ScanDataConversion scanDatabaseData(ScanDbSettings settings,
-                                               String username) {
+    public ScanDataConversion createScanDatabaseConversion(ScanDbSettings settings,
+                                                           String username) {
         String project = settings.getDatabase();
         ScanDataConversion conversion = ScanDataConversion.builder()
                 .username(username)
@@ -60,16 +59,15 @@ public class ScanDataServiceImpl implements ScanDataService {
                 .build();
         settings.setScanDataConversion(conversion);
         conversionRepository.saveAndFlush(conversion);
-        conversionService.runConversion(conversion);
 
         return conversion;
     }
 
     @Transactional
     @Override
-    public ScanDataConversion scanFilesData(ScanFilesSettings settings,
-                                            List<MultipartFile> files,
-                                            String username) {
+    public ScanDataConversion createScanFilesConversion(ScanFilesSettings settings,
+                                                        List<MultipartFile> files,
+                                                        String username) {
         String project = "csv";
         String directoryName = format("%s/%s", username, project);
         createDirectory(directoryName);
@@ -91,7 +89,6 @@ public class ScanDataServiceImpl implements ScanDataService {
                     .build();
             settings.setScanDataConversion(conversion);
             conversionRepository.saveAndFlush(conversion);
-            conversionService.runConversion(conversion);
 
             return conversion;
         } catch (Exception e) {

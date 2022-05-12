@@ -36,9 +36,6 @@ public class FakeDataServiceTest {
     StorageService storageService;
 
     @MockBean
-    FakeDataConversionService conversionService;
-
-    @MockBean
     FilesManagerService filesManagerService;
 
     FakeDataService fakeDataService;
@@ -49,7 +46,6 @@ public class FakeDataServiceTest {
                 conversionRepository,
                 logRepository,
                 storageService,
-                conversionService,
                 filesManagerService
         );
     }

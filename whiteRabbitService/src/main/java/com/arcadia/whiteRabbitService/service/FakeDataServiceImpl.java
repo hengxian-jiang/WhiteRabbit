@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
@@ -36,7 +35,6 @@ public class FakeDataServiceImpl implements FakeDataService {
     private final FakeDataConversionRepository conversionRepository;
     private final FakeDataLogRepository logRepository;
     private final StorageService storageService;
-    private final FakeDataConversionService conversionService;
     private final FilesManagerService filesManagerService;
 
     @Override
@@ -49,37 +47,9 @@ public class FakeDataServiceImpl implements FakeDataService {
         return conversion;
     }
 
-    @Deprecated
+    @Transactional
     @Override
-    public FakeDataConversion generateFakeData(MultipartFile scanReportFile, FakeDataSettings settings, String username) {
-        String project = "fake-data";
-        String directoryName = format("%s/%s", username, project);
-        createDirectory(directoryName);
-        settings.setDirectory(directoryName);
-        settings.setScanReportFileName(scanReportFile.getName());
-        try {
-            storageService.store(scanReportFile, settings.getDirectory(), settings.getScanReportFileName());
-            FakeDataConversion conversion = FakeDataConversion.builder()
-                    .username(username)
-                    .project(project)
-                    .statusCode(IN_PROGRESS.getCode())
-                    .statusName(IN_PROGRESS.getName())
-                    .fakeDataSettings(settings)
-                    .build();
-            settings.setFakeDataConversion(conversion);
-            conversionRepository.saveAndFlush(conversion);
-            conversionService.runConversion(conversion);
-
-            return conversion;
-        } catch (Exception e) {
-            log.error("Can not generate fake data {}", e.getMessage());
-            settings.destroy();
-            throw new ServerErrorException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public FakeDataConversion generateFakeData(FakeDataRequest fakeDataRequest, String username) {
+    public FakeDataConversion createFakeDataConversion(FakeDataRequest fakeDataRequest, String username) {
         ScanReportRequest scanReportInfo = fakeDataRequest.getScanReportInfo();
         FakeDataSettings settings = fakeDataRequest.getSettings();
         ByteArrayResource scanReportResource = filesManagerService.getFile(scanReportInfo.getDataId());
@@ -99,7 +69,6 @@ public class FakeDataServiceImpl implements FakeDataService {
                     .build();
             settings.setFakeDataConversion(conversion);
             conversionRepository.saveAndFlush(conversion);
-            conversionService.runConversion(conversion);
 
             return conversion;
         } catch (Exception e) {

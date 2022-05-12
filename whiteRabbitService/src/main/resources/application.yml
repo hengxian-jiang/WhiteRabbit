@@ -29,8 +29,8 @@ files-manager-url: http://localhost:10500/files-manager
 
 fake-data-db:
   db-type: PostgreSQL
-  server: jnjperseusu1
-  port: 5433
-  database: perseus
-  user: perseus
+  server: localhost
+  port: 5432
+  database: source
+  user: source
   password: password

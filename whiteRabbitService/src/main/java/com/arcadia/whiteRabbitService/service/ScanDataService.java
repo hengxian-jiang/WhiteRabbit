@@ -9,12 +9,12 @@ import java.util.List;
 public interface ScanDataService {
     ScanDataConversion findConversionById(Long conversionId, String username);
 
-    ScanDataConversion scanDatabaseData(ScanDbSettings settings,
-                                        String username);
+    ScanDataConversion createScanDatabaseConversion(ScanDbSettings settings,
+                                                    String username);
 
-    ScanDataConversion scanFilesData(ScanFilesSettings setting,
-                                     List<MultipartFile> files,
-                                     String username);
+    ScanDataConversion createScanFilesConversion(ScanFilesSettings setting,
+                                                 List<MultipartFile> files,
+                                                 String username);
 
     ConversionWithLogsResponse conversionInfoWithLogs(Long conversionId, String username);
 

@@ -1,6 +1,5 @@
 package com.arcadia.whiteRabbitService.service;
 
-import com.arcadia.whiteRabbitService.model.ConversionStatus;
 import com.arcadia.whiteRabbitService.model.LogStatus;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDataConversion;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDataLog;
@@ -79,7 +78,6 @@ public class ScanDataServiceTest {
         );
         scanDataService = new ScanDataServiceImpl(
                 conversionRepository,
-                conversionService,
                 storageService,
                 logRepository,
                 resultRepository
@@ -98,7 +96,8 @@ public class ScanDataServiceTest {
         Mockito.when(filesManagerService.saveFile(any()))
                 .thenReturn(fileSaveResponse);
 
-        ScanDataConversion conversion = scanDataService.scanDatabaseData(dbSettings, username);
+        ScanDataConversion conversion = scanDataService.createScanDatabaseConversion(dbSettings, username);
+        conversionService.runConversion(conversion);
 
         assertEquals(COMPLETED.getCode(), conversion.getStatusCode());
         assertEquals(COMPLETED.getName(), conversion.getStatusName());
@@ -121,7 +120,8 @@ public class ScanDataServiceTest {
         Mockito.when(filesManagerService.saveFile(any()))
                 .thenReturn(fileSaveResponse);
 
-        ScanDataConversion conversion = scanDataService.scanDatabaseData(dbSettings, username);
+        ScanDataConversion conversion = scanDataService.createScanDatabaseConversion(dbSettings, username);
+        conversionService.runConversion(conversion);
 
         assertEquals(FAILED.getCode(), conversion.getStatusCode());
         assertEquals(FAILED.getName(), conversion.getStatusName());

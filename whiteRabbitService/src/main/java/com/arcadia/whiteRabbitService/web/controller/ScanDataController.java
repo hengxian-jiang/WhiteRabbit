@@ -2,6 +2,7 @@ package com.arcadia.whiteRabbitService.web.controller;
 
 import com.arcadia.whiteRabbitService.model.scandata.*;
 import com.arcadia.whiteRabbitService.service.FilesManagerService;
+import com.arcadia.whiteRabbitService.service.ScanDataConversionService;
 import com.arcadia.whiteRabbitService.service.ScanDataService;
 import com.arcadia.whiteRabbitService.service.error.BadRequestException;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
@@ -32,13 +33,16 @@ public class ScanDataController {
     public static final String INCORRECT_PARAMS_MESSAGE = "Incorrect Scan Data Params";
 
     private final ScanDataService scanDataService;
+    private final ScanDataConversionService conversionService;
     private final FilesManagerService filesManagerService;
 
     @PostMapping("/db")
     public ResponseEntity<ScanDataConversion> generate(@RequestHeader("Username") String username,
                                                        @Validated @RequestBody ScanDbSettings dbSetting) {
         log.info("Rest request to generate scan report by database settings");
-        return ok(scanDataService.scanDatabaseData(dbSetting, username));
+        ScanDataConversion conversion = scanDataService.createScanDatabaseConversion(dbSetting, username);
+        conversionService.runConversion(conversion);
+        return ok(conversion);
     }
 
     @PostMapping("/files")
@@ -49,7 +53,9 @@ public class ScanDataController {
         try {
             ObjectMapper mapper = new ObjectMapper();
             ScanFilesSettings scanFilesSettings = mapper.readValue(settings, ScanFilesSettings.class);
-            return ok(scanDataService.scanFilesData(scanFilesSettings, files, username));
+            ScanDataConversion conversion = scanDataService.createScanFilesConversion(scanFilesSettings, files, username);
+            conversionService.runConversion(conversion);
+            return ok(conversion);
         } catch (JsonProcessingException e) {
             log.error(INCORRECT_PARAMS_MESSAGE + ". " + e.getMessage());
             throw new BadRequestException(INCORRECT_PARAMS_MESSAGE);
