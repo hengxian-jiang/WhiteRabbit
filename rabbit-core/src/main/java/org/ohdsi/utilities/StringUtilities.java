@@ -22,14 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.zip.DataFormatException;
 
 public class StringUtilities {
@@ -878,5 +871,31 @@ public class StringUtilities {
 		}
 		return false;
 	}
-	
+
+	public static int numericOptionToInt(String option) {
+		switch (option) {
+			case "100":
+			case "1 hundred":
+				return 100;
+			case "1,000":
+			case "1 thousand":
+				return 1000;
+			case "10,000":
+			case "10 thousand":
+				return 10000;
+			case "100,000":
+			case "100 thousand":
+				return 100000;
+			case "500,000":
+			case "500 thousand":
+				return 500000;
+			case "1,000,000":
+			case "1 million":
+				return 1000000;
+			case "all":
+				return -1;
+			default:
+				return 0;
+		}
+	}
 }

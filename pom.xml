@@ -14,7 +14,7 @@
     <groupId>org.ohdsi</groupId>
     <artifactId>leporidae</artifactId>
     <packaging>pom</packaging>
-    <version>0.10.2</version>
+    <version>0.10.7</version>
     <modules>
         <module>whiterabbit</module>
         <module>rabbit-core</module>
@@ -117,6 +117,8 @@
                     <configuration>
                         <programs>
                         </programs>
+                        <repositoryLayout>flat</repositoryLayout>
+                        <useWildcardClassPath>true</useWildcardClassPath>
                     </configuration>
                     <executions>
                         <execution>

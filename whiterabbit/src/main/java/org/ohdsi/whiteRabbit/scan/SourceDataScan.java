@@ -83,6 +83,7 @@ public class SourceDataScan implements CanInterrupt {
 	}
 
 	public void setSampleSize(int sampleSize) {
+		// -1 if sample size is not restricted
 		this.sampleSize = sampleSize;
 	}
 
@@ -568,7 +569,7 @@ public class SourceDataScan implements CanInterrupt {
 					}
 				}
 			}
-			if (lineNr > sampleSize)
+			if (sampleSize != -1 && lineNr > sampleSize)
 				break;
 
 			checkWasInterrupted();
@@ -601,7 +602,7 @@ public class SourceDataScan implements CanInterrupt {
 			return fieldInfos;
 		}
 
-		for (int lineNr = 0; lineNr < sasFileProperties.getRowCount() && lineNr < sampleSize; lineNr++) {
+		for (int lineNr = 0; lineNr < sasFileProperties.getRowCount(); lineNr++) {
 			Object[] row = sasFileReader.readNext();
 
 			if (row.length != fieldInfos.size()) {
@@ -612,6 +613,9 @@ public class SourceDataScan implements CanInterrupt {
 			for (int i = 0; i < row.length; i++) {
 				fieldInfos.get(i).processValue(row[i] == null ? "" : row[i].toString());
 			}
+
+			if (sampleSize != -1 && lineNr >= sampleSize)
+				break;
 		}
 
 		for (FieldInfo fieldInfo : fieldInfos) {
