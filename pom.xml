@@ -84,6 +84,15 @@
             </snapshots>
         </repository>
         <repository>
+            <id>broadinstitute</id>
+            <name>BroadInstitute Repository</name>
+            <url>https://broadinstitute.jfrog.io/artifactory/libs-release-local/</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>local-maven-repo</id>
             <name>Local Repository</name>
             <layout>default</layout>
