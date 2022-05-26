@@ -9,7 +9,7 @@ This service wraps WhiteRabbit functional in Web-service, that used by **Perseus
 Features
 ========
 - Can scan databases in SQL Server, Oracle, PostgreSQL, MySQL, MS Access, Amazon RedShift, Google BigQuery, SAS files and CSV files
-- The scan report contains information on tables, fields, and frequency distributions of values
+- The scan report contains information on tables, fields, and frequency distributions of values 
 - Cutoff on the minimum frequency of values to protect patient privacy
 
 Technology
