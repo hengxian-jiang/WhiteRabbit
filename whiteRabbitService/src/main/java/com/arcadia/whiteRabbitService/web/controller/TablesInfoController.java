@@ -19,7 +19,6 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequiredArgsConstructor
 @Slf4j
 public class TablesInfoController {
-
     private final WhiteRabbitFacade whiteRabbitFacade;
 
     @PostMapping
