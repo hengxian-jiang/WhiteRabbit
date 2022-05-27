@@ -29,7 +29,7 @@ files-manager-url: ${FILE_MANAGER_URL}
 
 fake-data-db:
   db-type: ${SOURCE_DB_TYPE}
-  server: ${SOURCE_DB_SERVER}
+  server: ${SOURCE_DB_HOST}
   port: ${SOURCE_DB_PORT}
   database: ${SOURCE_DB_NAME}
   user: ${SOURCE_DB_USER}
