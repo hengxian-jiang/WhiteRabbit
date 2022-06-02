@@ -13,24 +13,32 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
   datasource:
-    url: ${SHARED_DB_URL}
-    username: ${SHARED_DB_WR_USERNAME}
-    password: ${SHARED_DB_WR_PASSWORD}
+    url: ${SharedDbUrl}
+    username: ${SharedDbWhiteRabbitUser}
+    password: ${SharedDbWhiteRabbitPass}
   jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
     hibernate:
       ddl-auto: update
     show-sql: false
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          property-source-enabled: true
+          property-sources:
+            -
+              credential:
+                client-id: ${AZURE_CLIENT_ID}
+              endpoint: https://kv-perseus.vault.azure.net/
+              profile:
+                tenant-id: ${AZURE_TENANT_ID}
 
-files-manager-url: ${FILE_MANAGER_URL}
+files-manager-url: ${FilesManagerUrl}
 
 fake-data-db:
-  db-type: ${SOURCE_DB_TYPE}
-  server: ${SOURCE_DB_HOST}
-  port: ${SOURCE_DB_PORT}
-  database: ${SOURCE_DB_NAME}
-  user: ${SOURCE_DB_USER}
-  password: ${SOURCE_DB_PASSWORD}
+  db-type: ${SourceDbType}
+  server: ${SourceDbHost}
+  port: ${SourceDbPort}
+  database: ${SourceDbName}
+  user: ${SourceDbUser}
+  password: ${SourceDbPassword}
