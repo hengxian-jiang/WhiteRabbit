@@ -19,4 +19,7 @@ VOLUME /tmp
 
 ARG JAR_FILE=/workspace/app/whiteRabbitService/target/*.jar
 COPY --from=build ${JAR_FILE} app.jar
+
+EXPOSE 8000
+
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar ${0} ${@}"]
