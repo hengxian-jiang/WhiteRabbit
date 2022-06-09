@@ -41,4 +41,4 @@ fake-data-db:
   port: ${SourceDbPort}
   database: ${SourceDbName}
   user: ${SourceDbUser}
-  password: ${SourceDbPassword}
+  password: ${SourceDbPass}
