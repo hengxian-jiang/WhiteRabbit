@@ -42,6 +42,16 @@ public class DatabaseLogger<T> implements Logger {
         this.scannedItemsCount++;
     }
 
+    @Override
+    public void setItemsCount(int itemsCount) {
+        this.itemsCount = itemsCount;
+    }
+
+    @Override
+    public void systemInfo(String message) {
+        log.info(message);
+    }
+
     private void saveLogMessageWithStatus(String message, LogStatus status, Integer percent) {
         log.info(message);
         T log = logCreator.create(message, status, percent);
@@ -51,9 +61,5 @@ public class DatabaseLogger<T> implements Logger {
     private int currentPercent() {
         double percent = ((double) scannedItemsCount / itemsCount) * 100;
         return (int) percent;
-    }
-
-    public void setItemsCount(int itemsCount) {
-        this.itemsCount = itemsCount;
     }
 }

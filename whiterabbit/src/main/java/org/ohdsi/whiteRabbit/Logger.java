@@ -12,4 +12,6 @@ public interface Logger {
     void setItemsCount(int itemsCount);
 
     void incrementScannedItems();
+
+    void systemInfo(String message);
 }

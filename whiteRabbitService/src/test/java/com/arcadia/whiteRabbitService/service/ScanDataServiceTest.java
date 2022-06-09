@@ -25,12 +25,14 @@ import java.io.File;
 import java.sql.Timestamp;
 import java.util.List;
 
-import static com.arcadia.whiteRabbitService.model.ConversionStatus.*;
+import static com.arcadia.whiteRabbitService.model.ConversionStatus.COMPLETED;
+import static com.arcadia.whiteRabbitService.model.ConversionStatus.FAILED;
 import static com.arcadia.whiteRabbitService.model.LogStatus.INFO;
 import static com.arcadia.whiteRabbitService.service.DbSettingsAdapterTest.createTestDbSettings;
 import static com.arcadia.whiteRabbitService.service.ScanDataConversionServiceTest.createScanDataConversion;
 import static com.arcadia.whiteRabbitService.service.ScanDataResultServiceImpl.DATA_KEY;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -67,14 +69,14 @@ public class ScanDataServiceTest {
         resultService = new ScanDataResultServiceImpl(
                 conversionRepository,
                 resultRepository,
-                logRepository,
-                filesManagerService
+                logRepository
         );
         conversionService = new ScanDataConversionServiceImpl(
                 logRepository,
                 conversionRepository,
                 whiteRabbitFacade,
-                resultService
+                resultService,
+                filesManagerService
         );
         scanDataService = new ScanDataServiceImpl(
                 conversionRepository,

@@ -30,4 +30,9 @@ public class ConsoleLogger implements Logger {
     @Override
     public void incrementScannedItems() {
     }
+
+    @Override
+    public void systemInfo(String message) {
+        info(message);
+    }
 }

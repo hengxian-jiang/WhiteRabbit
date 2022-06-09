@@ -192,11 +192,13 @@ public class SourceDataScan {
 	}
 
 	private void generateReport(String filename) {
-		logger.info("Generating scan report");
+		logger.info("Generating scan report...");
 		removeEmptyTables();
 
+		logger.systemInfo("Creating workbook...");
 		workbook = new SXSSFWorkbook(100); // keep 100 rows in memory, exceeding rows will be flushed to disk
 
+		logger.systemInfo("Filing indexed tables name lookups...");
 		int i = 0;
 		indexedTableNameLookup = new HashMap<>();
 		for (Table table : tableToFieldInfos.keySet()) {
@@ -205,19 +207,24 @@ public class SourceDataScan {
 			i++;
 		}
 
+		logger.systemInfo("Creating Field Overview Sheet...");
 		createFieldOverviewSheet();
+		logger.systemInfo("Creating Table Overview Sheet...");
 		createTableOverviewSheet();
 
 		if (scanValues) {
+			logger.systemInfo("Creating Value sheet...");
 			createValueSheet();
 		}
 
+		logger.systemInfo("Creating Meta sheet...");
 		createMetaSheet();
 
 		try (FileOutputStream out = new FileOutputStream(new File(filename))) {
+			logger.systemInfo("Filling scan report...");
 			workbook.write(out);
 			out.close();
-			logger.info("Scan report generated");
+			logger.info("Scan report generated!");
 		} catch (IOException ex) {
 			logger.error(ex.getMessage());
 			throw new RuntimeException(ex.getMessage());

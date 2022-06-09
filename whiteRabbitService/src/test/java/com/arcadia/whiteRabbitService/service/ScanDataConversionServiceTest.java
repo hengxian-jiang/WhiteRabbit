@@ -4,6 +4,7 @@ import com.arcadia.whiteRabbitService.model.scandata.ScanDataConversion;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDbSettings;
 import com.arcadia.whiteRabbitService.repository.ScanDataConversionRepository;
 import com.arcadia.whiteRabbitService.repository.ScanDataLogRepository;
+import com.arcadia.whiteRabbitService.service.response.FileSaveResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,7 @@ import java.io.File;
 
 import static com.arcadia.whiteRabbitService.model.ConversionStatus.IN_PROGRESS;
 import static com.arcadia.whiteRabbitService.service.DbSettingsAdapterTest.createTestDbSettings;
+import static com.arcadia.whiteRabbitService.service.ScanDataResultServiceImpl.DATA_KEY;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -36,6 +38,9 @@ public class ScanDataConversionServiceTest {
     @MockBean
     File scanReportFile;
 
+    @MockBean
+    FilesManagerService filesManagerService;
+
     ScanDataConversionService conversionService;
 
     @BeforeEach
@@ -44,7 +49,8 @@ public class ScanDataConversionServiceTest {
                 logRepository,
                 conversionRepository,
                 whiteRabbitFacade,
-                resultService
+                resultService,
+                filesManagerService
         );
     }
 
@@ -53,9 +59,13 @@ public class ScanDataConversionServiceTest {
         ScanDataConversion conversion = createScanDataConversion();
         when(whiteRabbitFacade.generateScanReport(eq(conversion.getSettings()), any(), any()))
                 .thenReturn(scanReportFile);
+        FileSaveResponse fileSaveResponse = new FileSaveResponse(1L, "perseus", DATA_KEY, "test.xlsx");
+        when(filesManagerService.saveFile(Mockito.any()))
+                .thenReturn(fileSaveResponse);
+
         conversionService.runConversion(conversion);
 
-        Mockito.verify(resultService).saveCompletedResult(scanReportFile, conversion.getId());
+        Mockito.verify(resultService).saveCompletedResult(fileSaveResponse, conversion.getId());
     }
 
     @Test

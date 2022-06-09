@@ -14,10 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.io.File;
-
-import static com.arcadia.whiteRabbitService.model.ConversionStatus.*;
-import static com.arcadia.whiteRabbitService.service.FilesManagerServiceTest.readFileFromResources;
+import static com.arcadia.whiteRabbitService.model.ConversionStatus.COMPLETED;
+import static com.arcadia.whiteRabbitService.model.ConversionStatus.FAILED;
 import static com.arcadia.whiteRabbitService.service.ScanDataConversionServiceTest.createScanDataConversion;
 import static com.arcadia.whiteRabbitService.service.ScanDataResultServiceImpl.DATA_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,21 +43,19 @@ class ScanDataResultServiceTest {
         resultService = new ScanDataResultServiceImpl(
                 conversionRepository,
                 resultRepository,
-                logRepository,
-                filesManagerService
+                logRepository
         );
     }
 
     @Test
     void saveCompletedResult() {
-        String fileName = "mdcd_native_test.xlsx";
-        File scanReportFile = readFileFromResources(getClass(), fileName);
         Long fileId = 1L;
         ScanDataConversion conversion = createScanDataConversion();
         conversionRepository.save(conversion);
+        FileSaveResponse fileSaveResponse = new FileSaveResponse(fileId, conversion.getUsername(), DATA_KEY, "test.xlsx");
         Mockito.when(filesManagerService.saveFile(Mockito.any()))
-                .thenReturn(new FileSaveResponse(fileId, conversion.getUsername(), DATA_KEY, "test.xlsx"));
-        resultService.saveCompletedResult(scanReportFile, conversion.getId());
+                .thenReturn(fileSaveResponse);
+        resultService.saveCompletedResult(fileSaveResponse, conversion.getId());
         conversion = conversionRepository.findById(conversion.getId()).get();
 
         assertNotNull(conversion.getResult());

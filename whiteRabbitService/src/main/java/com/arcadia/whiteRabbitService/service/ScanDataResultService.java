@@ -1,11 +1,9 @@
 package com.arcadia.whiteRabbitService.service;
 
-import com.arcadia.whiteRabbitService.model.scandata.ScanDataConversion;
-
-import java.io.File;
+import com.arcadia.whiteRabbitService.service.response.FileSaveResponse;
 
 public interface ScanDataResultService {
-    void saveCompletedResult(File scanReportFile, Long conversionId);
+    void saveCompletedResult(FileSaveResponse scanReportFile, Long conversionId);
 
     void saveFailedResult(Long conversionId, String errorMessage);
 }
