@@ -17,16 +17,20 @@
  ******************************************************************************/
 package org.ohdsi.whiteRabbit;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Image;
-import java.awt.MediaTracker;
-import java.awt.Toolkit;
+import org.apache.commons.csv.CSVFormat;
+import org.ohdsi.databases.DbType;
+import org.ohdsi.databases.RichConnection;
+import org.ohdsi.utilities.DirectoryUtilities;
+import org.ohdsi.utilities.StringUtilities;
+import org.ohdsi.utilities.Version;
+import org.ohdsi.utilities.files.IniFile;
+import org.ohdsi.whiteRabbit.fakeDataGenerator.FakeDataGenerator;
+import org.ohdsi.whiteRabbit.scan.SourceDataScan;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -39,42 +43,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import org.apache.commons.csv.CSVFormat;
-import org.ohdsi.databases.DbType;
-import org.ohdsi.databases.RichConnection;
-import org.ohdsi.utilities.DirectoryUtilities;
-import org.ohdsi.utilities.StringUtilities;
-import org.ohdsi.utilities.Version;
-import org.ohdsi.utilities.files.IniFile;
-import org.ohdsi.whiteRabbit.fakeDataGenerator.FakeDataGenerator;
-import org.ohdsi.whiteRabbit.scan.SourceDataScan;
 
 /**
  * This is the WhiteRabbit main class

@@ -220,10 +220,8 @@ public class SourceDataScan {
 		logger.systemInfo("Creating Meta sheet...");
 		createMetaSheet();
 
-		try (FileOutputStream out = new FileOutputStream(new File(filename))) {
-			logger.systemInfo("Filling scan report...");
+		try (FileOutputStream out = new FileOutputStream(filename)) {
 			workbook.write(out);
-			out.close();
 			logger.info("Scan report generated!");
 		} catch (IOException ex) {
 			logger.error(ex.getMessage());
