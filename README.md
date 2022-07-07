@@ -15,13 +15,13 @@ Features
 Technology
 ============
 
-- Java 15
+- Java 17
 
 Getting Started
 ===============
 
-    docker build -t white-rabbit-service .
-    docker run --name white-rabbit-service -d --network host white-rabbit-service
+    docker build -t white-rabbit .
+    docker run --name white-rabbit -d -p 8000:8000 -e SPRING_PROFILES_ACTIVE='docker' --network=perseus-net white-rabbit
 
 License
 =======
