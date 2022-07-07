@@ -1,0 +1,44 @@
+server:
+  port: 8000
+  error:
+    include-message: always
+  servlet:
+    context-path: /white-rabbit
+
+spring:
+  application:
+    name: White Rabbit
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  datasource:
+    url: ${SharedDbUrl}
+    username: ${SharedDbWhiteRabbitUser}
+    password: ${SharedDbWhiteRabbitPass}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          property-source-enabled: true
+          property-sources:
+            -
+              credential:
+                client-id: ${AZURE_CLIENT_ID}
+              endpoint: https://kv-perseus.vault.azure.net/
+              profile:
+                tenant-id: ${AZURE_TENANT_ID}
+
+files-manager-url: ${FilesManagerUrl}
+
+fake-data-db:
+  db-type: ${SourceDbType}
+  server: ${SourceDbHost}
+  port: ${SourceDbPort}
+  database: ${SourceDbName}
+  user: ${SourceDbUser}
+  password: ${SourceDbPass}

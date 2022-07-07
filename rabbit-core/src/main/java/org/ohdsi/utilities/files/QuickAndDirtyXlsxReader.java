@@ -17,19 +17,20 @@
  ******************************************************************************/
 package org.ohdsi.utilities.files;
 
-import org.ohdsi.utilities.StringUtilities;
-import org.ohdsi.utilities.collections.IntegerComparator;
-import org.ohdsi.utilities.files.QuickAndDirtyXlsxReader.Sheet;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.ohdsi.utilities.StringUtilities;
+import org.ohdsi.utilities.collections.IntegerComparator;
+import org.ohdsi.utilities.files.QuickAndDirtyXlsxReader.Sheet;
 
 public class QuickAndDirtyXlsxReader extends ArrayList<Sheet> {
 
@@ -53,7 +54,7 @@ public class QuickAndDirtyXlsxReader extends ArrayList<Sheet> {
 			readFromStream(inputStream);
 
 			// Step 3: order the sheets:
-			this.sort((o1, o2) -> IntegerComparator.compare(o1.order, o2.order));
+			Collections.sort(this, (o1, o2) -> IntegerComparator.compare(o1.order, o2.order));
 			inputStream.close();
 		} catch (IOException e) {
 			e.printStackTrace();

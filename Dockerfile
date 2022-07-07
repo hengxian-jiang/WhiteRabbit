@@ -1,4 +1,4 @@
-FROM openjdk:15-oracle as build
+FROM openjdk:17 as build
 WORKDIR /workspace/app
 
 COPY rabbit-core rabbit-core
@@ -14,11 +14,13 @@ RUN tr -d '\015' <./mvnw >./mvnw.sh && mv ./mvnw.sh ./mvnw && chmod 770 mvnw
 
 RUN ./mvnw package
 
-FROM openjdk:15-oracle
-VOLUME /tmp
+FROM openjdk:17
 
-EXPOSE 8000
+VOLUME /tmp
 
 ARG JAR_FILE=/workspace/app/whiteRabbitService/target/*.jar
 COPY --from=build ${JAR_FILE} app.jar
+
+EXPOSE 8000
+
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar ${0} ${@}"]
