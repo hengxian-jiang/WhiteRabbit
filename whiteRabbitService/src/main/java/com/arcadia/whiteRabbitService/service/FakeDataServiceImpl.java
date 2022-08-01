@@ -5,13 +5,9 @@ import com.arcadia.whiteRabbitService.model.fakedata.FakeDataLog;
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataSettings;
 import com.arcadia.whiteRabbitService.repository.FakeDataConversionRepository;
 import com.arcadia.whiteRabbitService.repository.FakeDataLogRepository;
-import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
-import com.arcadia.whiteRabbitService.service.request.FakeDataRequest;
-import com.arcadia.whiteRabbitService.service.request.ScanReportRequest;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,8 +19,6 @@ import java.util.stream.Collectors;
 import static com.arcadia.whiteRabbitService.model.ConversionStatus.ABORTED;
 import static com.arcadia.whiteRabbitService.model.ConversionStatus.IN_PROGRESS;
 import static com.arcadia.whiteRabbitService.util.ConversionUtil.toResponseWithLogs;
-import static com.arcadia.whiteRabbitService.util.FileUtil.createDirectory;
-import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -34,8 +28,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class FakeDataServiceImpl implements FakeDataService {
     private final FakeDataConversionRepository conversionRepository;
     private final FakeDataLogRepository logRepository;
-    private final StorageService storageService;
-    private final FilesManagerService filesManagerService;
 
     @Override
     public FakeDataConversion findConversionById(Long conversionId, String username) {
@@ -49,33 +41,17 @@ public class FakeDataServiceImpl implements FakeDataService {
 
     @Transactional
     @Override
-    public FakeDataConversion createFakeDataConversion(FakeDataRequest fakeDataRequest, String username) {
-        ScanReportRequest scanReportInfo = fakeDataRequest.getScanReportInfo();
-        FakeDataSettings settings = fakeDataRequest.getSettings();
-        ByteArrayResource scanReportResource = filesManagerService.getFile(scanReportInfo.getDataId());
-        String project = "fake-data";
-        String directoryName = format("%s/%s", username, project);
-        createDirectory(directoryName);
-        settings.setDirectory(directoryName);
-        settings.setScanReportFileName(scanReportInfo.getFileName());
-        try {
-            storageService.store(scanReportResource, settings.getDirectory(), settings.getScanReportFileName());
-            FakeDataConversion conversion = FakeDataConversion.builder()
-                    .username(username)
-                    .project(project)
-                    .statusCode(IN_PROGRESS.getCode())
-                    .statusName(IN_PROGRESS.getName())
-                    .fakeDataSettings(settings)
-                    .build();
-            settings.setFakeDataConversion(conversion);
-            conversionRepository.saveAndFlush(conversion);
+    public FakeDataConversion createFakeDataConversion(FakeDataSettings fakeDataSettings, String username, String project) {
+        FakeDataConversion conversion = FakeDataConversion.builder()
+                .username(username)
+                .project(project)
+                .statusCode(IN_PROGRESS.getCode())
+                .statusName(IN_PROGRESS.getName())
+                .fakeDataSettings(fakeDataSettings)
+                .build();
+        fakeDataSettings.setFakeDataConversion(conversion);
 
-            return conversion;
-        } catch (Exception e) {
-            log.error("Can not generate fake data {}", e.getMessage());
-            settings.destroy();
-            throw new ServerErrorException(e.getMessage(), e);
-        }
+        return conversionRepository.saveAndFlush(conversion);
     }
 
     @Override

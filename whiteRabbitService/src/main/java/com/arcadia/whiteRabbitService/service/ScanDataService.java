@@ -14,7 +14,8 @@ public interface ScanDataService {
 
     ScanDataConversion createScanFilesConversion(ScanFilesSettings setting,
                                                  List<MultipartFile> files,
-                                                 String username);
+                                                 String username,
+                                                 String project);
 
     ConversionWithLogsResponse conversionInfoWithLogs(Long conversionId, String username);
 

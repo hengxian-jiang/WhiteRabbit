@@ -1,4 +1,4 @@
-package com.arcadia.whiteRabbitService.service.util;
+package com.arcadia.whiteRabbitService.service.log;
 
 import com.arcadia.whiteRabbitService.model.LogStatus;
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataConversion;

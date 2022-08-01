@@ -21,7 +21,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -57,8 +59,7 @@ public class ScanDataServiceTest {
     @MockBean
     FilesManagerService filesManagerService;
 
-    @MockBean
-    File scanReportFile;
+    Path scanReportFile = Path.of("test-scan-report.xlsx");
 
     ScanDataResultService resultService;
     ScanDataConversionService conversionService;
@@ -80,7 +81,6 @@ public class ScanDataServiceTest {
         );
         scanDataService = new ScanDataServiceImpl(
                 conversionRepository,
-                storageService,
                 logRepository,
                 resultRepository
         );
@@ -88,9 +88,10 @@ public class ScanDataServiceTest {
 
     @Transactional
     @Test
-    void scanDatabaseDataAndComplete() throws InterruptedException {
+    void scanDatabaseDataAndComplete() throws InterruptedException, IOException {
         ScanDbSettings dbSettings = createTestDbSettings("postgresql", 5433);
         String username = "Perseus";
+        Files.createFile(scanReportFile);
         Mockito.when(whiteRabbitFacade.generateScanReport(eq(dbSettings), any(), any()))
                 .thenReturn(scanReportFile);
         Long id = 1L;

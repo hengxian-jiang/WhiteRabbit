@@ -16,5 +16,5 @@ public class FakeDataRequest {
     @NotNull
     FakeDataSettings settings;
     @NotNull
-    ScanReportRequest scanReportInfo;
+    ScanReportInfo scanReportInfo;
 }

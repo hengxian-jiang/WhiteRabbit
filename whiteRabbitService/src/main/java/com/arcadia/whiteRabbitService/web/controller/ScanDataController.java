@@ -4,7 +4,9 @@ import com.arcadia.whiteRabbitService.model.scandata.*;
 import com.arcadia.whiteRabbitService.service.FilesManagerService;
 import com.arcadia.whiteRabbitService.service.ScanDataConversionService;
 import com.arcadia.whiteRabbitService.service.ScanDataService;
+import com.arcadia.whiteRabbitService.service.StorageService;
 import com.arcadia.whiteRabbitService.service.error.BadRequestException;
+import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
 import com.arcadia.whiteRabbitService.service.response.ScanReportResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,8 +20,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
+import static com.arcadia.whiteRabbitService.util.FileUtil.createDirectory;
+import static com.arcadia.whiteRabbitService.util.FileUtil.deleteRecursive;
 import static java.lang.String.format;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.ResponseEntity.noContent;
@@ -30,11 +37,11 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequiredArgsConstructor
 @Slf4j
 public class ScanDataController {
-    public static final String INCORRECT_PARAMS_MESSAGE = "Incorrect Scan Data Params";
-
     private final ScanDataService scanDataService;
     private final ScanDataConversionService conversionService;
     private final FilesManagerService filesManagerService;
+
+    private final StorageService storageService;
 
     @PostMapping("/db")
     public ResponseEntity<ScanDataConversion> generate(@RequestHeader("Username") String username,
@@ -50,16 +57,36 @@ public class ScanDataController {
                                                        @RequestParam String settings,
                                                        @RequestParam List<MultipartFile> files) {
         log.info("Rest request to generate scan report by files settings");
+        ScanFilesSettings scanFilesSettings;
         try {
             ObjectMapper mapper = new ObjectMapper();
-            ScanFilesSettings scanFilesSettings = mapper.readValue(settings, ScanFilesSettings.class);
-            ScanDataConversion conversion = scanDataService.createScanFilesConversion(scanFilesSettings, files, username);
-            conversionService.runConversion(conversion);
-            return ok(conversion);
+            scanFilesSettings = mapper.readValue(settings, ScanFilesSettings.class);
         } catch (JsonProcessingException e) {
-            log.error(INCORRECT_PARAMS_MESSAGE + ". " + e.getMessage());
-            throw new BadRequestException(INCORRECT_PARAMS_MESSAGE);
+            throw new BadRequestException("Incorrect Scan Data Params: " + e.getMessage());
         }
+
+        String project = "csv";
+        Path csvDirectory = Path.of(username, project);
+        createDirectory(csvDirectory);
+        List<Path> csvFiles = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                Path csvFilePath = storageService.store(file, csvDirectory, file.getOriginalFilename());
+                csvFiles.add(csvFilePath);
+            }
+        } catch (IOException e) {
+            log.error("Could not store CSV data {}", e.getMessage());
+            e.printStackTrace();
+            deleteRecursive(csvDirectory);
+            throw new ServerErrorException(e.getMessage(), e);
+        }
+
+        scanFilesSettings.setCsvDirectory(csvDirectory);
+        scanFilesSettings.setCsvFiles(csvFiles);
+        ScanDataConversion conversion = scanDataService.createScanFilesConversion(scanFilesSettings, files, username, project);
+        conversionService.runConversion(conversion);
+
+        return ok(conversion);
     }
 
     @GetMapping("/abort/{conversionId}")

@@ -1,4 +1,4 @@
-package com.arcadia.whiteRabbitService.service.util;
+package com.arcadia.whiteRabbitService.service.log;
 
 import com.arcadia.whiteRabbitService.model.LogStatus;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +10,8 @@ import static com.arcadia.whiteRabbitService.model.LogStatus.*;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DatabaseLogger<T> implements Logger {
-    private final JpaRepository<T, Long> logRepository;
+public class DatabaseLogger<T, ID> implements Logger {
+    private final JpaRepository<T, ID> logRepository;
     private final LogCreator<T> logCreator;
 
     private int itemsCount = 0;

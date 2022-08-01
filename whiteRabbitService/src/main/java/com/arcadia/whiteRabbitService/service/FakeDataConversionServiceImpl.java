@@ -2,13 +2,16 @@ package com.arcadia.whiteRabbitService.service;
 
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataConversion;
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataLog;
-import com.arcadia.whiteRabbitService.model.fakedata.FakeDataSettings;
 import com.arcadia.whiteRabbitService.repository.FakeDataConversionRepository;
 import com.arcadia.whiteRabbitService.repository.FakeDataLogRepository;
-import com.arcadia.whiteRabbitService.service.util.DatabaseLogger;
-import com.arcadia.whiteRabbitService.service.util.FakeDataLogCreator;
+import com.arcadia.whiteRabbitService.service.interrupt.FakeDataInterrupter;
+import com.arcadia.whiteRabbitService.service.log.DatabaseLogger;
+import com.arcadia.whiteRabbitService.service.log.FakeDataLogCreator;
+import com.arcadia.whiteRabbitService.service.log.LogCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ohdsi.whiteRabbit.Interrupter;
+import org.ohdsi.whiteRabbit.Logger;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
@@ -27,20 +30,21 @@ public class FakeDataConversionServiceImpl implements FakeDataConversionService 
     @Async
     @Override
     public Future<Void> runConversion(FakeDataConversion conversion) {
-        FakeDataSettings settings = conversion.getFakeDataSettings();
-        FakeDataLogCreator logCreator = new FakeDataLogCreator(conversion);
-        DatabaseLogger<FakeDataLog> logger = new DatabaseLogger<>(logRepository, logCreator);
-        FakeDataInterrupter interrupter = new FakeDataInterrupter(conversionRepository, conversion.getId());
+        LogCreator<FakeDataLog> logCreator = new FakeDataLogCreator(conversion);
+        Logger logger = new DatabaseLogger<>(logRepository, logCreator);
+        Interrupter interrupter = new FakeDataInterrupter(conversionRepository, conversion.getId());
+
         try {
-            whiteRabbitFacade.generateFakeData(settings, logger, interrupter);
+            whiteRabbitFacade.generateFakeData(conversion.getFakeDataSettings(), logger, interrupter);
             resultService.saveCompletedResult(conversion.getId());
         } catch (InterruptedException e) {
             log.warn(e.getMessage());
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Could not generate Fake Data: " + e.getMessage());
+            e.printStackTrace();
             resultService.saveFailedResult(conversion.getId(), e.getMessage());
         } finally {
-            settings.destroy();
+            conversion.getFakeDataSettings().destroy();
         }
         return new AsyncResult<>(null);
     }
