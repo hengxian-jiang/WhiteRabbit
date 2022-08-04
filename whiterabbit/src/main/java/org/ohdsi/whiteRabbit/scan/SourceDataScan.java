@@ -558,6 +558,12 @@ public class SourceDataScan {
 		List<FieldInfo> fieldInfos = new ArrayList<>();
 		int lineNr = 0;
 		for (String line : new ReadTextFile(filename)) {
+
+			// Remove BOM
+			if (lineNr == 0) {
+				line = line.replace("\uFEFF", "");
+			}
+			
 			lineNr++;
 			List<String> row = StringUtilities.safeSplit(line, delimiter);
 			for (int i = 0; i < row.size(); i++) {
