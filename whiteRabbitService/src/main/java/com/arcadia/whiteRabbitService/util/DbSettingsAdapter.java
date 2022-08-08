@@ -65,6 +65,10 @@ public final class DbSettingsAdapter {
         dbSettings.database = dbSetting.getDatabase();
         dbSettings.dbType = adaptDbType(dbSetting.getDbType());
 
+        if (dbSettings.dbType == DbType.AZURE) {
+            String.format("%s;database=%s", dbSettings.server, dbSettings.database);
+        }
+
         checkWindowsAuthentication(dbSettings);
         setDomain(dbSettings);
         adaptSchemaName(dbSettings, dbSetting.getSchema());
