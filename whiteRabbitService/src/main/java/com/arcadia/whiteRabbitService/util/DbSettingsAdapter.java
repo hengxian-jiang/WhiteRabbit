@@ -67,6 +67,7 @@ public final class DbSettingsAdapter {
 
         if (dbSettings.dbType == DbType.AZURE) {
             dbSettings.server = String.format("%s;database=%s", dbSettings.server, dbSettings.database);
+            dbSettings.database = "";
         }
 
         checkWindowsAuthentication(dbSettings);
