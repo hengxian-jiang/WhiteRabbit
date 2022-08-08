@@ -22,19 +22,17 @@ import org.ohdsi.rabbitInAHat.dataModel.Database;
 import org.ohdsi.rabbitInAHat.dataModel.Field;
 import org.ohdsi.rabbitInAHat.dataModel.Table;
 import org.ohdsi.rabbitInAHat.dataModel.ValueCounts;
-import org.ohdsi.whiteRabbit.ConsoleLogger;
-import org.ohdsi.whiteRabbit.Logger;
+import org.ohdsi.whiteRabbit.*;
 import org.ohdsi.utilities.StringUtilities;
 import org.ohdsi.utilities.files.Row;
 import org.ohdsi.utilities.files.WriteCSVFileWithHeader;
-import org.ohdsi.whiteRabbit.Interrupter;
-import org.ohdsi.whiteRabbit.DbSettings;
-import org.ohdsi.whiteRabbit.ThreadInterrupter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static org.ohdsi.whiteRabbit.TooManyTablesException.MAX_TABLES_COUNT;
 
 public class FakeDataGenerator {
 
@@ -58,13 +56,13 @@ public class FakeDataGenerator {
 	}
 
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling) throws InterruptedException {
+							 boolean doUniformSampling) throws InterruptedException, TooManyTablesException {
 		generateData(dbSettings, maxRowsPerTable, filename, folder, doUniformSampling, null, true);
 	}
 
 	/* Schema name can be null */
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException {
+							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException, TooManyTablesException {
 		this.maxRowsPerTable = maxRowsPerTable;
 		DbSettings.SourceType targetType = dbSettings.sourceType;
 		this.doUniformSampling = doUniformSampling;
@@ -72,6 +70,9 @@ public class FakeDataGenerator {
 		logger.info("Starting creation of fake data");
 
 		Database database = Database.generateModelFromScanReport(filename, schemaName);
+		if (database.getTables().size() > MAX_TABLES_COUNT) {
+			throw new TooManyTablesException();
+		}
 		logger.setItemsCount(database.getTables().size());
 
 		if (targetType == DbSettings.SourceType.DATABASE) {

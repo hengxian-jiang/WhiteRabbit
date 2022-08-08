@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.arcadia.whiteRabbitService.service.WhiteRabbitFacade.MAX_TABLES_COUNT;
 import static com.arcadia.whiteRabbitService.util.FileUtil.createDirectory;
 import static com.arcadia.whiteRabbitService.util.FileUtil.deleteRecursive;
 import static java.lang.String.format;
@@ -57,6 +58,9 @@ public class ScanDataController {
                                                        @RequestParam String settings,
                                                        @RequestParam List<MultipartFile> files) {
         log.info("Rest request to generate scan report by files settings");
+        if (files.size() > MAX_TABLES_COUNT) {
+            throw new BadRequestException(format("Too many files. Max count is %d.", MAX_TABLES_COUNT));
+        }
         ScanFilesSettings scanFilesSettings;
         try {
             ObjectMapper mapper = new ObjectMapper();
