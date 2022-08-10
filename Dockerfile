@@ -1,18 +1,19 @@
 FROM openjdk:17 as build
-WORKDIR /workspace/app
 
-COPY rabbit-core rabbit-core
-COPY whiterabbit whiterabbit
-COPY whiteRabbitService whiteRabbitService
-COPY lib lib
+WORKDIR /workspace/app
 
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
+COPY lib lib
+
+COPY rabbit-core rabbit-core
+COPY whiterabbit whiterabbit
+COPY whiteRabbitService whiteRabbitService
 
 RUN tr -d '\015' <./mvnw >./mvnw.sh && mv ./mvnw.sh ./mvnw && chmod 770 mvnw
-
-RUN ./mvnw package
+RUN ./mvnw dependency:go-offline -B
+RUN ./mvnw -B package
 
 FROM openjdk:17
 
