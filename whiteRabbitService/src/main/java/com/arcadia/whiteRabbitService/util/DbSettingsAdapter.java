@@ -65,8 +65,13 @@ public final class DbSettingsAdapter {
         dbSettings.database = dbSetting.getDatabase();
         dbSettings.dbType = adaptDbType(dbSetting.getDbType());
 
-        if (dbSettings.dbType == DbType.AZURE) {
+        if (dbSettings.dbType == DbType.MSSQL || dbSettings.dbType == DbType.AZURE) {
             dbSettings.server = String.format("%s;database=%s", dbSettings.server, dbSettings.database);
+            if (dbSettings.dbType == DbType.AZURE) {
+                dbSettings.database = "";
+            } else {
+                dbSettings.database = "[" + dbSettings.database + "]";
+            }
         }
 
         checkWindowsAuthentication(dbSettings);
