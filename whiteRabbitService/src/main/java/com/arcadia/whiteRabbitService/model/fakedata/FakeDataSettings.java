@@ -1,6 +1,5 @@
 package com.arcadia.whiteRabbitService.model.fakedata;
 
-import com.arcadia.whiteRabbitService.model.scandata.ScanDbSettings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -44,7 +43,7 @@ public class FakeDataSettings {
     private String userSchema;
 
     @Transient
-    private String directory;
+    private Path directory;
 
     @Transient
     private String scanReportFileName;
@@ -55,7 +54,9 @@ public class FakeDataSettings {
     private FakeDataConversion fakeDataConversion;
 
     public void destroy() {
-        deleteRecursive(Path.of(directory));
+        if (Files.exists(directory)) {
+            deleteRecursive(directory);
+        }
     }
 
     @Override
@@ -69,5 +70,10 @@ public class FakeDataSettings {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @JsonIgnore
+    public Path getScanReportPath() {
+        return Path.of(directory.toString(), scanReportFileName);
     }
 }

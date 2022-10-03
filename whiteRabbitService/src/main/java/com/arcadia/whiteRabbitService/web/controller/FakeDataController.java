@@ -1,16 +1,26 @@
 package com.arcadia.whiteRabbitService.web.controller;
 
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataConversion;
+import com.arcadia.whiteRabbitService.model.fakedata.FakeDataSettings;
 import com.arcadia.whiteRabbitService.service.FakeDataConversionService;
 import com.arcadia.whiteRabbitService.service.FakeDataService;
+import com.arcadia.whiteRabbitService.service.FilesManagerService;
+import com.arcadia.whiteRabbitService.service.StorageService;
+import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
 import com.arcadia.whiteRabbitService.service.request.FakeDataRequest;
+import com.arcadia.whiteRabbitService.service.request.ScanReportInfo;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Path;
+
+import static com.arcadia.whiteRabbitService.util.FileUtil.createDirectory;
+import static com.arcadia.whiteRabbitService.util.FileUtil.deleteRecursive;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -21,13 +31,35 @@ import static org.springframework.http.ResponseEntity.ok;
 public class FakeDataController {
     private final FakeDataService fakeDataService;
     private final FakeDataConversionService conversionService;
+    private final FilesManagerService filesManagerService;
+    private final StorageService storageService;
 
     @PostMapping("/generate")
     public ResponseEntity<FakeDataConversion> generate(@RequestHeader("Username") String username,
                                                        @Validated @RequestBody FakeDataRequest fakeDataRequest) {
         log.info("Rest request to generate Fake Data");
-        FakeDataConversion conversion = fakeDataService.createFakeDataConversion(fakeDataRequest, username);
+
+        ScanReportInfo scanReportInfo = fakeDataRequest.getScanReportInfo();
+        Resource scanReportResource = filesManagerService.getFile(scanReportInfo.getDataId());
+
+        String project = "fake-data";
+        Path scanReportDirectory = Path.of(username, project);
+        createDirectory(scanReportDirectory);
+        try {
+            storageService.store(scanReportResource, scanReportDirectory, scanReportInfo.getFileName());
+        } catch (Exception e) {
+            log.error("Could not store Scan Report: {}", e.getMessage());
+            e.printStackTrace();
+            deleteRecursive(scanReportDirectory);
+            throw new ServerErrorException(e.getMessage(), e);
+        }
+
+        FakeDataSettings fakeDataSettings = fakeDataRequest.getSettings();
+        fakeDataSettings.setScanReportFileName(scanReportInfo.getFileName());
+        fakeDataSettings.setDirectory(scanReportDirectory);
+        FakeDataConversion conversion = fakeDataService.createFakeDataConversion(fakeDataSettings, username, project);
         conversionService.runConversion(conversion);
+
         return ok(conversion);
     }
 

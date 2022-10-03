@@ -12,7 +12,7 @@ import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.io.File;
+import java.nio.file.Path;
 
 import static com.arcadia.whiteRabbitService.model.ConversionStatus.IN_PROGRESS;
 import static com.arcadia.whiteRabbitService.service.DbSettingsAdapterTest.createTestDbSettings;
@@ -36,7 +36,7 @@ public class ScanDataConversionServiceTest {
     ScanDataResultService resultService;
 
     @MockBean
-    File scanReportFile;
+    Path scanReportFile;
 
     @MockBean
     FilesManagerService filesManagerService;

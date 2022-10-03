@@ -23,8 +23,8 @@ class DbSettingsAdapterTest {
         assertAll("Should be equals all string and primitive fields",
                 () -> assertEquals(settings.getUser(), dbSettings.user),
                 () -> assertEquals(settings.getPassword(), dbSettings.password),
-                () -> assertEquals(settings.getDatabase(), dbSettings.database),
-                () -> assertEquals(String.format("%s:%s", settings.getServer(), settings.getPort()), dbSettings.server)
+                () -> assertEquals("[" + settings.getDatabase() + "]", dbSettings.database),
+                () -> assertEquals(String.format("%s:%s;database=%s", settings.getServer(), settings.getPort(), settings.getDatabase()), dbSettings.server)
         );
     }
 

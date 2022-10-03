@@ -22,19 +22,17 @@ import org.ohdsi.rabbitInAHat.dataModel.Database;
 import org.ohdsi.rabbitInAHat.dataModel.Field;
 import org.ohdsi.rabbitInAHat.dataModel.Table;
 import org.ohdsi.rabbitInAHat.dataModel.ValueCounts;
-import org.ohdsi.whiteRabbit.ConsoleLogger;
-import org.ohdsi.whiteRabbit.Logger;
+import org.ohdsi.whiteRabbit.*;
 import org.ohdsi.utilities.StringUtilities;
 import org.ohdsi.utilities.files.Row;
 import org.ohdsi.utilities.files.WriteCSVFileWithHeader;
-import org.ohdsi.whiteRabbit.Interrupter;
-import org.ohdsi.whiteRabbit.DbSettings;
-import org.ohdsi.whiteRabbit.ThreadInterrupter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static org.ohdsi.whiteRabbit.TooManyTablesException.MAX_TABLES_COUNT;
 
 public class FakeDataGenerator {
 
@@ -42,9 +40,9 @@ public class FakeDataGenerator {
 	private int maxRowsPerTable = 1000;
 	private boolean doUniformSampling;
 
-	private static int REGULAR = 0;
-	private static int RANDOM = 1;
-	private static int PRIMARY_KEY = 2;
+	private static final int REGULAR = 0;
+	private static final int RANDOM = 1;
+	private static final int PRIMARY_KEY = 2;
 
 	private Logger logger = new ConsoleLogger();
 	private Interrupter interrupter = new ThreadInterrupter();
@@ -58,14 +56,13 @@ public class FakeDataGenerator {
 	}
 
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling) throws InterruptedException {
-		generateData(dbSettings, maxRowsPerTable, filename, folder, doUniformSampling,
-				null, true);
+							 boolean doUniformSampling) throws InterruptedException, TooManyTablesException {
+		generateData(dbSettings, maxRowsPerTable, filename, folder, doUniformSampling, null, true);
 	}
 
 	/* Schema name can be null */
 	public void generateData(DbSettings dbSettings, int maxRowsPerTable, String filename, String folder,
-							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException {
+							 boolean doUniformSampling, String schemaName, boolean createTables) throws InterruptedException, TooManyTablesException {
 		this.maxRowsPerTable = maxRowsPerTable;
 		DbSettings.SourceType targetType = dbSettings.sourceType;
 		this.doUniformSampling = doUniformSampling;
@@ -73,29 +70,33 @@ public class FakeDataGenerator {
 		logger.info("Starting creation of fake data");
 
 		Database database = Database.generateModelFromScanReport(filename, schemaName);
+		if (database.getTables().size() > MAX_TABLES_COUNT) {
+			throw new TooManyTablesException();
+		}
 		logger.setItemsCount(database.getTables().size());
 
 		if (targetType == DbSettings.SourceType.DATABASE) {
-			connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType);
-			connection.use(dbSettings.database);
-			for (Table table : database.getTables()) {
-				interrupter.checkWasInterrupted();
-				if (table.getName().toLowerCase().endsWith(".csv"))
-					table.setName(table.getName().substring(0, table.getName().length() - 4));
-				logger.info("Generating table " + table.getName());
-				if (createTables) {
-					createTable(table);
-				}
-				try {
-					connection.insertIntoTable(generateRows(table).iterator(), table.getName(), false);
-					logger.incrementScannedItems();
-					logger.info("Generated table " + table.getName());
-				} catch (SQLException e) {
-					connection.close();
-					throw new RuntimeException(e);
+			try(RichConnection conn = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType)) {
+				connection = conn;
+				connection.use(dbSettings.database);
+				for (Table table : database.getTables()) {
+					interrupter.checkWasInterrupted();
+					if (table.getName().toLowerCase().endsWith(".csv"))
+						table.setName(table.getName().substring(0, table.getName().length() - 4));
+					logger.info("Generating table " + table.getName());
+					if (createTables) {
+						createTable(table);
+					}
+					try {
+						connection.insertIntoTable(generateRows(table).iterator(), table.getName(), false);
+						logger.incrementScannedItems();
+						logger.info("Generated table " + table.getName());
+					} catch (SQLException e) {
+						connection.close();
+						throw new RuntimeException(e);
+					}
 				}
 			}
-			connection.close();
 		} else {
 			for (Table table : database.getTables()) {
 				String name = folder + "/" + table.getName();
@@ -128,7 +129,7 @@ public class FakeDataGenerator {
 //			if (valueGenerator.generatorType == PRIMARY_KEY && valueGenerator.values.length < size)
 //				size = valueGenerator.values.length;
 		}
-		List<Row> rows = new ArrayList<Row>();
+		List<Row> rows = new ArrayList<>();
 		for (int i = 0; i < size; i++) {
 			Row row = new Row();
 			for (int j = 0; j < fieldNames.length; j++)
@@ -140,10 +141,10 @@ public class FakeDataGenerator {
 
 	private void createTable(Table table) {
 		StringBuilder sql = new StringBuilder();
-		sql.append("CREATE TABLE " + table.getName() + " (\n");
+		sql.append("CREATE TABLE ").append(table.getName()).append(" (\n");
 		for (int i = 0; i < table.getFields().size(); i++) {
 			Field field = table.getFields().get(i);
-			sql.append("  " + field.getName() + " " + field.getType().toUpperCase());
+			sql.append("  ").append(field.getName()).append(" ").append(field.getType().toUpperCase());
 			if (i < table.getFields().size() - 1)
 				sql.append(",\n");
 		}
@@ -166,12 +167,12 @@ public class FakeDataGenerator {
 		private String[] values;
 		private int[] cumulativeFrequency;
 		private int totalFrequency;
-		private String fieldName;
-		private String type;
+		private final String fieldName;
+		private final String type;
 		private int length;
 		private int pk_cursor;
 		private int generatorType;
-		private Random random = new Random();
+		private final Random random = new Random();
 		private boolean isNotUniqueWarningShown = false;
 
 		public ValueGenerator(Field field) {

@@ -4,6 +4,8 @@ import com.arcadia.whiteRabbitService.model.scandata.ScanDataConversion;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDataLog;
 import com.arcadia.whiteRabbitService.repository.ScanDataConversionRepository;
 import com.arcadia.whiteRabbitService.repository.ScanDataLogRepository;
+import com.arcadia.whiteRabbitService.service.log.DatabaseLogger;
+import com.arcadia.whiteRabbitService.service.log.ScanDataLogCreator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,7 @@ class DatabaseLoggerTest {
     @Autowired
     ScanDataConversionRepository conversionRepository;
 
-    DatabaseLogger<ScanDataLog> databaseLogger;
+    DatabaseLogger<ScanDataLog, Long> databaseLogger;
 
     @BeforeEach
     void setUp() {

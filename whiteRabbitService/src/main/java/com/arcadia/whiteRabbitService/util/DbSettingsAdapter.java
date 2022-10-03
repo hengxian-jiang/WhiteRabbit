@@ -8,10 +8,12 @@ import org.ohdsi.databases.DbType;
 import org.ohdsi.databases.RichConnection;
 import org.ohdsi.whiteRabbit.DbSettings;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class DbSettingsAdapter {
 
@@ -63,6 +65,15 @@ public final class DbSettingsAdapter {
         dbSettings.database = dbSetting.getDatabase();
         dbSettings.dbType = adaptDbType(dbSetting.getDbType());
 
+        if (dbSettings.dbType == DbType.MSSQL || dbSettings.dbType == DbType.AZURE) {
+            dbSettings.server = String.format("%s;database=%s", dbSettings.server, dbSettings.database);
+            if (dbSettings.dbType == DbType.AZURE) {
+                dbSettings.database = "";
+            } else {
+                dbSettings.database = "[" + dbSettings.database + "]";
+            }
+        }
+
         checkWindowsAuthentication(dbSettings);
         setDomain(dbSettings);
         adaptSchemaName(dbSettings, dbSetting.getSchema());
@@ -76,7 +87,7 @@ public final class DbSettingsAdapter {
 
         dbSettings.sourceType = adaptDelimitedFileTypeToSourceType(dto.getFileType());
         dbSettings.delimiter = dto.getDelimiter().charAt(0);
-        dbSettings.tables = dto.getFileNames();
+        dbSettings.tables = dto.getCsvFiles().stream().map(Path::toString).collect(Collectors.toList());
         return dbSettings;
     }
 

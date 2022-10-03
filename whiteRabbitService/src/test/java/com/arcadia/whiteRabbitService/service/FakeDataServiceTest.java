@@ -32,21 +32,13 @@ public class FakeDataServiceTest {
     @Autowired
     FakeDataLogRepository logRepository;
 
-    @MockBean
-    StorageService storageService;
-
-    @MockBean
-    FilesManagerService filesManagerService;
-
     FakeDataService fakeDataService;
 
     @BeforeEach
     void setUp() {
         fakeDataService = new FakeDataServiceImpl(
                 conversionRepository,
-                logRepository,
-                storageService,
-                filesManagerService
+                logRepository
         );
     }
 

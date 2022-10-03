@@ -30,6 +30,12 @@
 
     <repositories>
         <repository>
+            <id>local-maven-repo</id>
+            <name>Local Repository</name>
+            <layout>default</layout>
+            <url>file:///${project.basedir}/../lib</url>
+        </repository>
+        <repository>
             <id>central</id>
             <name>Central Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
@@ -91,12 +97,6 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-        </repository>
-        <repository>
-            <id>local-maven-repo</id>
-            <name>Local Repository</name>
-            <layout>default</layout>
-            <url>file:///${project.basedir}/../lib</url>
         </repository>
     </repositories>
 

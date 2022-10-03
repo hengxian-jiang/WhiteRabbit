@@ -172,7 +172,7 @@ public class SourceDataScan {
 	@Deprecated
 	private void processSasFiles(DbSettings dbSettings) throws InterruptedException {
 		for (String fileName : dbSettings.tables) {
-			try(FileInputStream inputStream = new FileInputStream(new File(fileName))) {
+			try(FileInputStream inputStream = new FileInputStream(fileName)) {
 				SasFileReader sasFileReader = new SasFileReaderImpl(inputStream);
 				SasFileProperties sasFileProperties = sasFileReader.getSasFileProperties();
 
@@ -194,38 +194,34 @@ public class SourceDataScan {
 	private void generateReport(String filename) {
 		logger.info("Generating scan report...");
 		removeEmptyTables();
+		// keep 100 rows in memory, exceeding rows will be flushed to disk
+		try(SXSSFWorkbook sxssfWorkbook = new SXSSFWorkbook(100)) {
+			workbook = sxssfWorkbook;
+			int i = 0;
+			indexedTableNameLookup = new HashMap<>();
+			for (Table table : tableToFieldInfos.keySet()) {
+				String tableNameIndexed = Table.indexTableNameForSheetAndRemoveSchema(table.getName(), i, isFile);
+				indexedTableNameLookup.put(table.getName(), tableNameIndexed);
+				i++;
+			}
+			logger.systemInfo("Creating Field Overview Sheet...");
+			createFieldOverviewSheet();
+			logger.systemInfo("Creating Table Overview Sheet...");
+			createTableOverviewSheet();
+			if (scanValues) {
+				logger.systemInfo("Creating Value sheet...");
+				createValueSheet();
+			}
+			logger.systemInfo("Creating Meta sheet...");
+			createMetaSheet();
 
-		logger.systemInfo("Creating workbook...");
-		workbook = new SXSSFWorkbook(100); // keep 100 rows in memory, exceeding rows will be flushed to disk
-
-		logger.systemInfo("Filing indexed tables name lookups...");
-		int i = 0;
-		indexedTableNameLookup = new HashMap<>();
-		for (Table table : tableToFieldInfos.keySet()) {
-			String tableNameIndexed = Table.indexTableNameForSheetAndRemoveSchema(table.getName(), i, isFile);
-			indexedTableNameLookup.put(table.getName(), tableNameIndexed);
-			i++;
-		}
-
-		logger.systemInfo("Creating Field Overview Sheet...");
-		createFieldOverviewSheet();
-		logger.systemInfo("Creating Table Overview Sheet...");
-		createTableOverviewSheet();
-
-		if (scanValues) {
-			logger.systemInfo("Creating Value sheet...");
-			createValueSheet();
-		}
-
-		logger.systemInfo("Creating Meta sheet...");
-		createMetaSheet();
-
-		try (FileOutputStream out = new FileOutputStream(filename)) {
-			workbook.write(out);
-			logger.info("Scan report generated!");
-		} catch (IOException ex) {
-			logger.error(ex.getMessage());
-			throw new RuntimeException(ex.getMessage());
+			try (FileOutputStream out = new FileOutputStream(filename)) {
+				workbook.write(out);
+				logger.info("Scan report generated!");
+			}
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
 
@@ -562,6 +558,12 @@ public class SourceDataScan {
 		List<FieldInfo> fieldInfos = new ArrayList<>();
 		int lineNr = 0;
 		for (String line : new ReadTextFile(filename)) {
+
+			// Remove BOM
+			if (lineNr == 0) {
+				line = line.replace("\uFEFF", "");
+			}
+			
 			lineNr++;
 			List<String> row = StringUtilities.safeSplit(line, delimiter);
 			for (int i = 0; i < row.size(); i++) {

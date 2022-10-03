@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ScanReportRequest {
+public class ScanReportInfo {
     @NotNull
     private Long dataId;
     @NotNull

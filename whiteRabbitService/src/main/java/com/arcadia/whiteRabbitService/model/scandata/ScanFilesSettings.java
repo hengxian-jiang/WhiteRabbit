@@ -5,13 +5,13 @@ import org.ohdsi.whiteRabbit.DbSettings;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
 import static com.arcadia.whiteRabbitService.util.DbSettingsAdapter.adaptDelimitedTextFileSettings;
 import static com.arcadia.whiteRabbitService.util.FileUtil.deleteRecursive;
-import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.CascadeType.PERSIST;
 import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.GenerationType.SEQUENCE;
@@ -36,10 +36,10 @@ public class ScanFilesSettings implements ScanDataSettings {
     private String delimiter;
 
     @Transient
-    private List<String> fileNames;
+    private List<Path> csvFiles;
 
     @Transient
-    private String directory;
+    private Path csvDirectory;
 
     @OneToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "scan_data_conversion_id", referencedColumnName = "id")
@@ -58,7 +58,9 @@ public class ScanFilesSettings implements ScanDataSettings {
     @SneakyThrows
     @Override
     public void destroy() {
-        deleteRecursive(Path.of(directory));
+        if (Files.exists(csvDirectory)) {
+            deleteRecursive(csvDirectory);
+        }
     }
 
     @Override

@@ -2,27 +2,26 @@ package com.arcadia.whiteRabbitService.service;
 
 import com.arcadia.whiteRabbitService.config.FakeDataDbConfig;
 import com.arcadia.whiteRabbitService.model.fakedata.FakeDataSettings;
-import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
-import com.arcadia.whiteRabbitService.service.response.TablesInfoResponse;
-import com.arcadia.whiteRabbitService.model.scandata.ScanDataParams;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDataSettings;
 import com.arcadia.whiteRabbitService.model.scandata.ScanDbSettings;
+import com.arcadia.whiteRabbitService.service.error.BadRequestException;
 import com.arcadia.whiteRabbitService.service.response.TestConnectionResultResponse;
 import lombok.RequiredArgsConstructor;
 import org.ohdsi.databases.RichConnection;
-import org.ohdsi.whiteRabbit.Logger;
 import org.ohdsi.whiteRabbit.DbSettings;
 import org.ohdsi.whiteRabbit.Interrupter;
-import org.ohdsi.whiteRabbit.fakeDataGenerator.FakeDataGenerator;
+import org.ohdsi.whiteRabbit.Logger;
+import org.ohdsi.whiteRabbit.TooManyTablesException;
 import org.ohdsi.whiteRabbit.scan.SourceDataScan;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
-import static com.arcadia.whiteRabbitService.util.DbSettingsAdapter.adaptDbSettings;
+import static com.arcadia.whiteRabbitService.util.FakeDataGeneratorBuilder.createFakeDataGenerator;
 import static com.arcadia.whiteRabbitService.util.FileUtil.*;
+import static com.arcadia.whiteRabbitService.util.RichConnectionUtil.createRichConnection;
 import static com.arcadia.whiteRabbitService.util.SourceDataScanBuilder.createSourceDataScan;
 import static java.lang.String.format;
 
@@ -31,84 +30,73 @@ import static java.lang.String.format;
 public class WhiteRabbitFacade {
     private final FakeDataDbConfig fakeDataDbConfig;
 
+    public static final int MAX_TABLES_COUNT = TooManyTablesException.MAX_TABLES_COUNT;
+
     @PostConstruct
     public void init() {
         createDirectory(scanReportLocation);
     }
 
-    public TestConnectionResultResponse testConnection(ScanDbSettings dbSetting) {
-        try {
-            DbSettings dbSettings = adaptDbSettings(dbSetting);
-            RichConnection connection = new RichConnection(
-                    dbSettings.server,
-                    dbSettings.domain,
-                    dbSettings.user,
-                    dbSettings.password,
-                    dbSettings.dbType
-            );
-            List<String> tableNames = connection.getTableNames(dbSettings.database);
-            if (tableNames.size() == 0) {
-                String errorMessage = "Unable to retrieve table names for database " + dbSettings.database;
-                return new TestConnectionResultResponse(false, errorMessage);
+    public TestConnectionResultResponse testConnection(ScanDbSettings dbSettings) {
+        DbSettings wrSettings = dbSettings.toWhiteRabbitSettings();
+
+        try (RichConnection connection = createRichConnection(wrSettings)) {
+            List<String> tableNames = connection.getTableNames(wrSettings.database);
+            if (tableNames.isEmpty()) {
+                return TestConnectionResultResponse.builder()
+                        .canConnect(false)
+                        .message("Unable to retrieve table names for database " + wrSettings.database)
+                        .build();
+            } else if (tableNames.size() > MAX_TABLES_COUNT) {
+                return TestConnectionResultResponse.builder()
+                        .canConnect(false)
+                        .message(format("Database contains too many tables. Max count is %d.", MAX_TABLES_COUNT))
+                        .build();
+            } else {
+                return TestConnectionResultResponse.builder()
+                        .canConnect(true)
+                        .message(format("Successfully connected to %s database on server %s", wrSettings.database, wrSettings.server))
+                        .tableNames(tableNames)
+                        .build();
             }
-            connection.close();
-            var successMessage = format(
-                    "Successfully connected to %s on server %s",
-                    dbSettings.database,
-                    dbSettings.server
-            );
-
-            return new TestConnectionResultResponse(true, successMessage);
         } catch (Exception e) {
-            var errorMessage = format("Could not connect to database: %s", e.getMessage());
-
-            return new TestConnectionResultResponse(false, errorMessage);
+            return TestConnectionResultResponse.builder()
+                    .canConnect(false)
+                    .message("Could not connect to database: " + e.getMessage())
+                    .build();
         }
     }
 
-    public TablesInfoResponse tablesInfo(ScanDbSettings dbSetting) {
-        DbSettings dbSettings = adaptDbSettings(dbSetting);
-        try (RichConnection connection = new RichConnection(
-                dbSettings.server,
-                dbSettings.domain,
-                dbSettings.user,
-                dbSettings.password,
-                dbSettings.dbType
-        )) {
-            return new TablesInfoResponse(connection.getTableNames(dbSettings.database));
-        } catch (Exception e) {
-            throw new ServerErrorException(e.getMessage(), e);
+    public Path generateScanReport(ScanDataSettings dbSettings, Logger logger, Interrupter interrupter) throws InterruptedException {
+        DbSettings wrSettings = dbSettings.toWhiteRabbitSettings();
+        if (wrSettings.tables.size() > MAX_TABLES_COUNT) {
+            throw new BadRequestException(format("Database contains too many tables. Max count is %d.", MAX_TABLES_COUNT));
         }
-    }
-
-    public File generateScanReport(ScanDataSettings scanDataSettings, Logger logger, Interrupter interrupter) throws InterruptedException {
-        DbSettings dbSettings = scanDataSettings.toWhiteRabbitSettings();
-        ScanDataParams scanDataParams = scanDataSettings.getScanDataParams();
-        SourceDataScan sourceDataScan = createSourceDataScan(scanDataParams, logger, interrupter);
-        String scanReportFilePath = toScanReportFileFullName(generateRandomFileName());
-        sourceDataScan.process(dbSettings, scanReportFilePath);
-        return new File(scanReportFilePath);
+        SourceDataScan sourceDataScan = createSourceDataScan(dbSettings.getScanDataParams(), logger, interrupter);
+        Path scanReportFilePath = Path.of(scanReportLocation, generateRandomFileName());
+        sourceDataScan.process(wrSettings, scanReportFilePath.toString());
+        return scanReportFilePath;
     }
 
     public void generateFakeData(FakeDataSettings fakeDataSettings, Logger logger, Interrupter interrupter) throws InterruptedException {
-        DbSettings dbSettings = createFakeDataDbSettings(fakeDataSettings.getUserSchema());
-        FakeDataGenerator generator = new FakeDataGenerator();
-        generator.setLogger(logger);
-        generator.setInterrupter(interrupter);
-        String scanReportPath = fakeDataSettings.getDirectory() + "/" + fakeDataSettings.getScanReportFileName();
-        generator.generateData(
-                dbSettings,
-                fakeDataSettings.getMaxRowCount(),
-                scanReportPath,
-                null, // Not needed, it needs if generate fake data to delimited text file
-                fakeDataSettings.getDoUniformSampling(),
-                fakeDataSettings.getUserSchema(),
-                false // False - Tables are created when the report is uploaded to Perseus python service
-        );
+        DbSettings wrSettings = createFakeDataWrSettings(fakeDataSettings.getUserSchema());
+        try {
+            createFakeDataGenerator(logger, interrupter).generateData(
+                    wrSettings,
+                    fakeDataSettings.getMaxRowCount(),
+                    fakeDataSettings.getScanReportPath().toString(),
+                    null, // Not needed, it needs if generate fake data to delimited text file
+                    fakeDataSettings.getDoUniformSampling(),
+                    fakeDataSettings.getUserSchema(),
+                    false // False - Tables are created when the report is uploaded to Perseus python service
+            );
+        } catch (TooManyTablesException e) {
+            throw new BadRequestException(e.getMessage(), e);
+        }
     }
 
-    private DbSettings createFakeDataDbSettings(String schema) {
-        ScanDbSettings scanDbSettings = ScanDbSettings.builder()
+    private DbSettings createFakeDataWrSettings(String schema) {
+        return ScanDbSettings.builder()
                 .dbType(fakeDataDbConfig.getDbType())
                 .server(fakeDataDbConfig.getServer())
                 .port(fakeDataDbConfig.getPort())
@@ -116,7 +104,7 @@ public class WhiteRabbitFacade {
                 .user(fakeDataDbConfig.getUser())
                 .password(fakeDataDbConfig.getPassword())
                 .schema(schema)
-                .build();
-        return adaptDbSettings(scanDbSettings);
+                .build()
+                .toWhiteRabbitSettings();
     }
 }
