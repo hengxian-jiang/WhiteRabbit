@@ -36,12 +36,23 @@ public class FakeDataConversionServiceImpl implements FakeDataConversionService 
 
         try {
             whiteRabbitFacade.generateFakeData(conversion.getFakeDataSettings(), logger, interrupter);
+            log.info("Fake data generation process successfully finished. Conversion id {}, username: {}.",
+                    conversion.getId(),
+                    conversion.getUsername()
+            );
             resultService.saveCompletedResult(conversion.getId());
         } catch (InterruptedException e) {
-            log.warn(e.getMessage());
+            log.info("Fake data generation process with id {} was aborted by user {}",
+                    conversion.getId(),
+                    conversion.getUsername()
+            );
         } catch (Exception e) {
-            log.error("Could not generate Fake Data: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Fake data generation process failed: {}. Conversion id: {}, username: {}. Stack trace: {}",
+                    e.getMessage(),
+                    conversion.getId(),
+                    conversion.getUsername(),
+                    e.getStackTrace()
+            );
             resultService.saveFailedResult(conversion.getId(), e.getMessage());
         } finally {
             conversion.getFakeDataSettings().destroy();
