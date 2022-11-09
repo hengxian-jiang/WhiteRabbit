@@ -7,6 +7,7 @@ import com.arcadia.whiteRabbitService.model.scandata.ScanDbSettings;
 import com.arcadia.whiteRabbitService.service.error.BadRequestException;
 import com.arcadia.whiteRabbitService.service.response.TestConnectionResultResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ohdsi.databases.RichConnection;
 import org.ohdsi.whiteRabbit.DbSettings;
 import org.ohdsi.whiteRabbit.Interrupter;
@@ -27,6 +28,7 @@ import static java.lang.String.format;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WhiteRabbitFacade {
     private final FakeDataDbConfig fakeDataDbConfig;
 
@@ -43,15 +45,9 @@ public class WhiteRabbitFacade {
         try (RichConnection connection = createRichConnection(wrSettings)) {
             List<String> tableNames = connection.getTableNames(wrSettings.database);
             if (tableNames.isEmpty()) {
-                return TestConnectionResultResponse.builder()
-                        .canConnect(false)
-                        .message("Unable to retrieve table names for database " + wrSettings.database)
-                        .build();
+                return buildCanNotConnectResponse("Unable to retrieve table names for database " + wrSettings.database);
             } else if (tableNames.size() > MAX_TABLES_COUNT) {
-                return TestConnectionResultResponse.builder()
-                        .canConnect(false)
-                        .message(format("Database contains too many tables. Max count is %d.", MAX_TABLES_COUNT))
-                        .build();
+                return buildCanNotConnectResponse("Database contains too many tables. Max count is " + MAX_TABLES_COUNT);
             } else {
                 return TestConnectionResultResponse.builder()
                         .canConnect(true)
@@ -60,10 +56,7 @@ public class WhiteRabbitFacade {
                         .build();
             }
         } catch (Exception e) {
-            return TestConnectionResultResponse.builder()
-                    .canConnect(false)
-                    .message("Could not connect to database: " + e.getMessage())
-                    .build();
+            return buildCanNotConnectResponse("Could not connect to database: " + e.getMessage());
         }
     }
 
@@ -106,5 +99,12 @@ public class WhiteRabbitFacade {
                 .schema(schema)
                 .build()
                 .toWhiteRabbitSettings();
+    }
+
+    private TestConnectionResultResponse buildCanNotConnectResponse(String message) {
+        return TestConnectionResultResponse.builder()
+                .canConnect(false)
+                .message(message)
+                .build();
     }
 }

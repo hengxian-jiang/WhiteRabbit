@@ -1,12 +1,15 @@
 package com.arcadia.whiteRabbitService.web.controller;
 
-import com.arcadia.whiteRabbitService.model.scandata.*;
+import com.arcadia.whiteRabbitService.model.scandata.ScanDataConversion;
+import com.arcadia.whiteRabbitService.model.scandata.ScanDataResult;
+import com.arcadia.whiteRabbitService.model.scandata.ScanDbSettings;
+import com.arcadia.whiteRabbitService.model.scandata.ScanFilesSettings;
 import com.arcadia.whiteRabbitService.service.FilesManagerService;
 import com.arcadia.whiteRabbitService.service.ScanDataConversionService;
 import com.arcadia.whiteRabbitService.service.ScanDataService;
 import com.arcadia.whiteRabbitService.service.StorageService;
 import com.arcadia.whiteRabbitService.service.error.BadRequestException;
-import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
+import com.arcadia.whiteRabbitService.service.error.InternalServerErrorException;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
 import com.arcadia.whiteRabbitService.service.response.ScanReportResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,7 +44,6 @@ public class ScanDataController {
     private final ScanDataService scanDataService;
     private final ScanDataConversionService conversionService;
     private final FilesManagerService filesManagerService;
-
     private final StorageService storageService;
 
     @PostMapping("/db")
@@ -79,10 +81,9 @@ public class ScanDataController {
                 csvFiles.add(csvFilePath);
             }
         } catch (IOException e) {
-            log.error("Could not store CSV data {}", e.getMessage());
-            e.printStackTrace();
+            log.error("Could not store CSV file {}. Stack trace: {}", e.getMessage(), e.getStackTrace());
             deleteRecursive(csvDirectory);
-            throw new ServerErrorException(e.getMessage(), e);
+            throw new InternalServerErrorException(e.getMessage(), e);
         }
 
         scanFilesSettings.setCsvDirectory(csvDirectory);

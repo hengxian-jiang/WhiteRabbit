@@ -6,7 +6,7 @@ import com.arcadia.whiteRabbitService.service.FakeDataConversionService;
 import com.arcadia.whiteRabbitService.service.FakeDataService;
 import com.arcadia.whiteRabbitService.service.FilesManagerService;
 import com.arcadia.whiteRabbitService.service.StorageService;
-import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
+import com.arcadia.whiteRabbitService.service.error.InternalServerErrorException;
 import com.arcadia.whiteRabbitService.service.request.FakeDataRequest;
 import com.arcadia.whiteRabbitService.service.request.ScanReportInfo;
 import com.arcadia.whiteRabbitService.service.response.ConversionWithLogsResponse;
@@ -48,10 +48,9 @@ public class FakeDataController {
         try {
             storageService.store(scanReportResource, scanReportDirectory, scanReportInfo.getFileName());
         } catch (Exception e) {
-            log.error("Could not store Scan Report: {}", e.getMessage());
-            e.printStackTrace();
+            log.error("Could not store Scan Report file: {}. Stack trace: {}", e.getMessage(), e.getStackTrace());
             deleteRecursive(scanReportDirectory);
-            throw new ServerErrorException(e.getMessage(), e);
+            throw new InternalServerErrorException(e.getMessage(), e);
         }
 
         FakeDataSettings fakeDataSettings = fakeDataRequest.getSettings();

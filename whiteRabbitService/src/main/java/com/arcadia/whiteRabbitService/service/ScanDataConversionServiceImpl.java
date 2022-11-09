@@ -40,23 +40,33 @@ public class ScanDataConversionServiceImpl implements ScanDataConversionService 
         LogCreator<ScanDataLog> logCreator = new ScanDataLogCreator(conversion);
         Logger logger = new DatabaseLogger<>(logRepository, logCreator);
         Interrupter interrupter = new ScanDataInterrupter(conversionRepository, conversion.getId());
-
         try {
             Path scanReportFile = whiteRabbitFacade.generateScanReport(conversion.getSettings(), logger, interrupter);
-            log.info("Conversion process finished. Scan report file generated!");
+            log.info("Conversion data process successfully finished. Conversion id: {}, username: {}.",
+                    conversion.getId(),
+                    conversion.getUsername()
+            );
             try {
                 FileSaveRequest fileSaveRequest = createSaveFileRequest(conversion.getUsername(), scanReportFile);
                 FileSaveResponse fileSaveResponse = filesManagerService.saveFile(fileSaveRequest);
-                log.info("Scan report file saved via Files Manager service!");
+                log.info("Scan report file successfully saved. Conversion id: {}, username: {}.",
+                        conversion.getId(),
+                        conversion.getUsername()
+                );
                 resultService.saveCompletedResult(fileSaveResponse, conversion.getId());
             } finally {
                 Files.delete(scanReportFile);
             }
         } catch (InterruptedException e) {
-            log.warn(e.getMessage());
+            log.info("Conversion process with id {} was aborted by user {}",
+                    conversion.getId(),
+                    conversion.getUsername()
+            );
         } catch (Exception e) {
-            log.error("Failed to execute scan data process: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Conversion data process failed: {}. Stack trace: {}",
+                    e.getMessage(),
+                    e.getStackTrace()
+            );
             resultService.saveFailedResult(conversion.getId(), e.getMessage());
         } finally {
             conversion.getSettings().destroy();
