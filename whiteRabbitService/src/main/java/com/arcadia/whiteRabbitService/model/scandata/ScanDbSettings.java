@@ -54,7 +54,6 @@ public class ScanDbSettings implements ScanDataSettings {
     @Column(name = "schema_name")
     private String schema;
 
-    @NotNull
     @Transient
     private String tablesToScan;
 
@@ -63,7 +62,6 @@ public class ScanDbSettings implements ScanDataSettings {
     @JoinColumn(name = "scan_data_conversion_id", referencedColumnName = "id")
     private ScanDataConversion scanDataConversion;
 
-    @NotNull
     @OneToOne(cascade = PERSIST, fetch = LAZY, optional = false, orphanRemoval = true)
     @JoinColumn(name = "scan_params_id", referencedColumnName = "id")
     private ScanDataParams scanDataParams;
