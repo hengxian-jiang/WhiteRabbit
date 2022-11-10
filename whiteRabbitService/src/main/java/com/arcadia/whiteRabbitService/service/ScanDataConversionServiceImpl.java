@@ -63,10 +63,10 @@ public class ScanDataConversionServiceImpl implements ScanDataConversionService 
                     conversion.getUsername()
             );
         } catch (Exception e) {
-            log.error("Conversion data process failed: {}. Conversion id: {}, username: {}. Stack trace: {}",
-                    e.getMessage(),
+            log.error("Conversion process failed, id: {}, username: {}, error message: {}. Stack trace: {}",
                     conversion.getId(),
                     conversion.getUsername(),
+                    e.getMessage(),
                     e.getStackTrace()
             );
             resultService.saveFailedResult(conversion.getId(), e.getMessage());

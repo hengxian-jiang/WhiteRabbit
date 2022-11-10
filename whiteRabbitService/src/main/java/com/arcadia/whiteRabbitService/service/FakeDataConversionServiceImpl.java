@@ -47,10 +47,10 @@ public class FakeDataConversionServiceImpl implements FakeDataConversionService 
                     conversion.getUsername()
             );
         } catch (Exception e) {
-            log.error("Fake data generation process failed: {}. Conversion id: {}, username: {}. Stack trace: {}",
-                    e.getMessage(),
+            log.error("Fake data generation process failed, id: {}, username: {}, error message: {}. Stack trace: {}",
                     conversion.getId(),
                     conversion.getUsername(),
+                    e.getMessage(),
                     e.getStackTrace()
             );
             resultService.saveFailedResult(conversion.getId(), e.getMessage());
