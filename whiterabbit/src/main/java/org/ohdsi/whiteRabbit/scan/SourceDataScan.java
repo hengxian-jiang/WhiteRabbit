@@ -204,15 +204,11 @@ public class SourceDataScan {
 				indexedTableNameLookup.put(table.getName(), tableNameIndexed);
 				i++;
 			}
-			logger.systemInfo("Creating Field Overview Sheet...");
 			createFieldOverviewSheet();
-			logger.systemInfo("Creating Table Overview Sheet...");
 			createTableOverviewSheet();
 			if (scanValues) {
-				logger.systemInfo("Creating Value sheet...");
 				createValueSheet();
 			}
-			logger.systemInfo("Creating Meta sheet...");
 			createMetaSheet();
 
 			try (FileOutputStream out = new FileOutputStream(filename)) {

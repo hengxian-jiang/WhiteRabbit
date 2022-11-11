@@ -23,7 +23,7 @@ public class TestConnectionController {
 
     @PostMapping
     public ResponseEntity<TestConnectionResultResponse> testConnection(@Validated @RequestBody ScanDbSettings dbSetting) {
-        log.info("Rest request to test connection with settings {}", dbSetting);
+        log.info("Rest request to test connection");
         return ok(whiteRabbitFacade.testConnection(dbSetting));
     }
 }

@@ -19,7 +19,7 @@ public class ScanDataInterrupter implements Interrupter {
         ScanDataConversion conversion = conversionRepository.findById(conversionId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Conversion not found by id " + conversionId));
         if (conversion.getStatusCode() == ABORTED.getCode()) {
-            throw new InterruptedException("Scanning process was canceled by User");
+            throw new InterruptedException("Conversion process was aborted by User");
         }
     }
 }

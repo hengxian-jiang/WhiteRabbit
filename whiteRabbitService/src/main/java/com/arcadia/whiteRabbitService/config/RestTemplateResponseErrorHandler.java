@@ -1,7 +1,7 @@
 package com.arcadia.whiteRabbitService.config;
 
+import com.arcadia.whiteRabbitService.service.error.InternalServerErrorException;
 import com.arcadia.whiteRabbitService.service.error.NotFoundException;
-import com.arcadia.whiteRabbitService.service.error.ServerErrorException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.client.ClientHttpResponse;
@@ -23,7 +23,7 @@ public class RestTemplateResponseErrorHandler implements ResponseErrorHandler {
     @Override
     public void handleError(ClientHttpResponse response) throws IOException {
         if (response.getStatusCode().series() == SERVER_ERROR) {
-            throw new ServerErrorException(response.getBody().toString());
+            throw new InternalServerErrorException(response.getBody().toString());
         } else if (response.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
             if (response.getStatusCode() == NOT_FOUND) {
                 throw new NotFoundException(response.getBody().toString());

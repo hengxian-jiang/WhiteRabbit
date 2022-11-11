@@ -1,5 +1,6 @@
 package com.arcadia.whiteRabbitService.service;
 
+import com.arcadia.whiteRabbitService.service.error.InternalServerErrorException;
 import com.arcadia.whiteRabbitService.service.request.FileSaveRequest;
 import com.arcadia.whiteRabbitService.service.response.FileSaveResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
@@ -28,11 +30,16 @@ public class FilesManagerServiceImpl implements FilesManagerService {
 
     @Override
     public Resource getFile(Long userDataId) {
-        return restTemplate.getForObject(
-                filesManagerUrl + "/api/{userDataId}",
-                ByteArrayResource.class,
-                userDataId
-        );
+        try {
+            return restTemplate.getForObject(
+                    filesManagerUrl + "/api/{userDataId}",
+                    ByteArrayResource.class,
+                    userDataId
+            );
+        } catch (RestClientException e) {
+            log.error("Error when connect to File Manager: {}. Stack trace: {}", e.getMessage(), e.getStackTrace());
+            throw new InternalServerErrorException("Error when connect to File Manager: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -46,17 +53,27 @@ public class FilesManagerServiceImpl implements FilesManagerService {
         map.add("dataKey", model.getDataKey());
         map.add("file", model.getFile());
 
-        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(map, headers);
-        ResponseEntity<FileSaveResponse> responseEntity = restTemplate.postForEntity(
-                filesManagerUrl + "/api",
-                request,
-                FileSaveResponse.class
-        );
-        return responseEntity.getBody();
+        try {
+            HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(map, headers);
+            ResponseEntity<FileSaveResponse> responseEntity = restTemplate.postForEntity(
+                    filesManagerUrl + "/api",
+                    request,
+                    FileSaveResponse.class
+            );
+            return responseEntity.getBody();
+        } catch (RestClientException e) {
+            log.error("Error when connect to File Manager: {}. Stack trace: {}", e.getMessage(), e.getStackTrace());
+            throw new InternalServerErrorException("Error when connect to File Manager: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public void deleteFile(String key) {
-        restTemplate.delete(filesManagerUrl + "/api/${key}", key);
+        try {
+            restTemplate.delete(filesManagerUrl + "/api/${key}", key);
+        } catch (RestClientException e) {
+            log.error("Error when connect to File Manager: {}. Stack trace: {}", e.getMessage(), e.getStackTrace());
+            throw new InternalServerErrorException("Error when connect to File Manager: " + e.getMessage(), e);
+        }
     }
 }

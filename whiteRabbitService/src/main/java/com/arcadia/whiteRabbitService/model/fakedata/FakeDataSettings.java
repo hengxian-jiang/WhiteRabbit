@@ -42,9 +42,11 @@ public class FakeDataSettings {
     @Transient
     private String userSchema;
 
+    @JsonIgnore
     @Transient
     private Path directory;
 
+    @JsonIgnore
     @Transient
     private String scanReportFileName;
 
