@@ -47,6 +47,8 @@ public class FakeDataGenerator {
 	private Logger logger = new ConsoleLogger();
 	private Interrupter interrupter = new ThreadInterrupter();
 
+	private final UniqueStrBuilder uniqueStrBuilder = new UniqueStrBuilder();
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
@@ -244,6 +246,9 @@ public class FakeDataGenerator {
 					value = values[pk_cursor++];
 				} else {
 					value = String.valueOf(++pk_cursor);
+					if (value.length() > this.length && isVarChar(type)) {
+						value = uniqueStrBuilder.generateValMaxLengthOf(this.length);
+					}
 				}
 				return value;
 			} else { // Sample from values:
@@ -255,6 +260,87 @@ public class FakeDataGenerator {
 					return "";
 				return values[i];
 			}
+		}
+	}
+}
+
+class UniqueStrBuilder {
+	/*
+	 *	this class is used to generate unique string of given length
+	 * 	every char ("level") at index in a string has min value is 0, max value is Z.
+	 * 	0..9a..zA..Z
+	 * */
+	private final char DEFAULT_CHAR = '0';
+	private StringBuilder str;
+	private String prevVal = "";
+
+	public String generateValMaxLengthOf(int maxLength) {
+		this.str = new StringBuilder(prevVal);
+		str.setLength(maxLength);
+
+		if (prevVal.isEmpty()) {
+			this.fillStringWithInitValues();
+			prevVal = str.toString();
+			return prevVal;
+		}
+
+		this.incrementChars();
+
+		prevVal = str.toString();
+		return prevVal;
+	}
+
+	private void incrementChars() {
+		final char endDigitChar = '9';
+		final char startLowerAlpha = 'a';
+		final char endLowerAlpha = 'z';
+		final char startUpperAlpha = 'A';
+		final char endUpperAlpha = 'Z';
+
+		for (byte currLevel = 0; currLevel < str.length(); ++currLevel) {
+			char elem = str.charAt(currLevel);
+			boolean isLastLevel = currLevel == str.length() - 1;
+			if (isLastLevel && elem == endUpperAlpha) {
+				break;
+			}
+			if (elem == endUpperAlpha) {
+				this.resetPrevLevels(currLevel);
+				continue;
+			}
+
+			char newChar = DEFAULT_CHAR;
+
+			if (Character.isDigit(elem)) {
+				newChar = elem < endDigitChar ? ++elem : startLowerAlpha;
+			}
+
+			if (Character.isLetter(elem) && Character.isLowerCase(elem)) {
+				newChar = elem < endLowerAlpha ? ++elem : startUpperAlpha;
+			}
+
+			str.setCharAt(currLevel, newChar);
+
+			if (Character.isLetter(elem) && Character.isUpperCase(elem)) {
+				if (elem < endUpperAlpha) {
+					str.setCharAt(currLevel, ++elem);
+				} else {
+					str.setCharAt(currLevel, DEFAULT_CHAR);
+					continue;
+				}
+			}
+			break;
+		}
+	}
+
+	private void fillStringWithInitValues() {
+		for (short i = 0; i < str.length(); ++i) {
+			str.setCharAt(i, DEFAULT_CHAR);
+		}
+	}
+
+	private void resetPrevLevels(byte currLevel) {
+		for (byte i = currLevel; i >= 0; --i) {
+			str.setCharAt(i, DEFAULT_CHAR);
 		}
 	}
 }
