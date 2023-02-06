@@ -29,7 +29,8 @@ public final class DbSettingsAdapter {
             DbType.AZURE, dbType -> dbType.equalsIgnoreCase("Azure"),
             DbType.MSACCESS, dbType -> dbType.equalsIgnoreCase("MS Access"),
             DbType.TERADATA, dbType -> dbType.equalsIgnoreCase("Teradata"),
-            DbType.BIGQUERY, dbType -> dbType.equalsIgnoreCase("BigQuery")
+            DbType.BIGQUERY, dbType -> dbType.equalsIgnoreCase("BigQuery"),
+            DbType.DATABRICKS, dbType -> dbType.equalsIgnoreCase("Databricks")
     );
 
     private static final List<DbType> dbTypesHasWindowsAuthentication = List.of(

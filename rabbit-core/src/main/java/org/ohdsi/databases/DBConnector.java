@@ -48,6 +48,8 @@ public class DBConnector {
 			return DBConnector.connectToTeradata(server, user, password);
 		else if (dbType.equals(DbType.BIGQUERY))
 			return DBConnector.connectToBigQuery(server, domain, user, password);
+                else if (dbType.equals(DbType.DATABRICKS))
+			return DBConnector.connectToDatabricks(server, user, password);
 		else
 			return null;
 	}
@@ -248,6 +250,22 @@ public class DBConnector {
 			return DriverManager.getConnection(url);
 		} catch (SQLException e1) {
 			throw new RuntimeException("Simba URL failed: Cannot connect to DB server: " + e1.getMessage());
+		}
+	}
+        
+        public static Connection connectToDatabricks(String server, String user, String password) {
+		try {
+			Class.forName("com.simba.spark.jdbc.Driver");
+		} catch (ClassNotFoundException e1) {
+			throw new RuntimeException("Cannot find spark JDBC driver.");
+		}
+
+                String url = "dbc:spark://" + server + ":443/default;transportMode=http;ssl=1;httpPath=" + user + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
+
+		try {
+			return DriverManager.getConnection(url);
+		} catch (SQLException e1) {
+			throw new RuntimeException("Cannot connect to DB server: " + e1.getMessage());
 		}
 	}
 }

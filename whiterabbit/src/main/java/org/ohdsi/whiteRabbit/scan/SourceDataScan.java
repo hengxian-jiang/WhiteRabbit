@@ -479,6 +479,8 @@ public class SourceDataScan {
 				query = "SELECT " + "TOP " + sampleSize + " * FROM [" + table + "]";
 			else if (dbType == DbType.BIGQUERY)
 				query = "SELECT * FROM " + table + " ORDER BY RAND() LIMIT " + sampleSize;
+                        else if (dbType == DbType.DATABRICKS)
+				query = "SELECT * FROM " + table + " ORDER BY RAND() LIMIT " + sampleSize;
 		}
 		// logger.log("SQL: " + query);
 		return connection.query(query);
@@ -527,6 +529,9 @@ public class SourceDataScan {
 			}
 			else if (dbType == DbType.BIGQUERY) {
 				query = "SELECT column_name AS COLUMN_NAME, data_type as DATA_TYPE FROM " + database + ".INFORMATION_SCHEMA.COLUMNS WHERE table_name = \"" + table + "\";";
+                        }
+                        else if (dbType == DbType.DATABRICKS) {
+                            query = "DESCRIBE TABLE " + table + ";";
 			}
 
 			for (org.ohdsi.utilities.files.Row row : connection.query(query)) {
@@ -534,14 +539,22 @@ public class SourceDataScan {
 				FieldInfo fieldInfo;
 				if (dbType == DbType.TERADATA) {
 					fieldInfo = new FieldInfo(row.get("COLUMNNAME"));
-				} else {
+				} else if (dbType == DbType.DATABRICKS) {
+					fieldInfo = new FieldInfo(row.get("col_name"));
+				}  
+                                else {
 					fieldInfo = new FieldInfo(row.get("COLUMN_NAME"));
 				}
 				if (dbType == DbType.TERADATA) {
 					fieldInfo.type = row.get("COLUMNTYPE");
-				} else {
+				} else if (dbType == DbType.DATABRICKS) {
+					fieldInfo.type = row.get("data_type");
+				} 
+                                else {
 					fieldInfo.type = row.get("DATA_TYPE");
 				}
+                                
+                                
 				fieldInfo.rowCount = connection.getTableSize(table);
 				fieldInfos.add(fieldInfo);
 			}
