@@ -260,7 +260,7 @@ public class DBConnector {
 			throw new RuntimeException("Cannot find databricks JDBC driver.");
 		}
 
-                String url = "dbc:spark://" + server + ":443/default;transportMode=http;ssl=1;httpPath=" + user + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
+                String url = "jdbc:databricks://" + server + ":443/default;transportMode=http;ssl=1;httpPath=" + user + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
 
 		try {
 			return DriverManager.getConnection(url);
