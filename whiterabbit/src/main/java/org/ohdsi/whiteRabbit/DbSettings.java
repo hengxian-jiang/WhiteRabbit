@@ -38,6 +38,7 @@ public class DbSettings {
     public String database;
     public String server;
     public String domain;
+    public String httppath;
 
     // CSV file settings
     public char delimiter = ',';

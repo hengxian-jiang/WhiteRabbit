@@ -32,10 +32,12 @@ public class RichConnection implements Closeable {
 	private boolean					verbose				= false;
 	private static DecimalFormat	decimalFormat		= new DecimalFormat("#.#");
 	private DbType					dbType;
+        private String httppath;
 
-	public RichConnection(String server, String domain, String user, String password, DbType dbType) {
-		this.connection = DBConnector.connect(server, domain, user, password, dbType);
+	public RichConnection(String server, String domain, String user, String password, DbType dbType, String httppath) {
+		this.connection = DBConnector.connect(server, domain, user, password, dbType, httppath);
 		this.dbType = dbType;
+                this.httppath = httppath;
 	}
 
 	/**

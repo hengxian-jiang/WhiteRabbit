@@ -53,6 +53,9 @@ public class ScanDbSettings implements ScanDataSettings {
 
     @Column(name = "schema_name")
     private String schema;
+    
+    @Column()
+    private String httppath;
 
     @Transient
     private String tablesToScan;
