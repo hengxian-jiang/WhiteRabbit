@@ -255,9 +255,9 @@ public class DBConnector {
         
         public static Connection connectToDatabricks(String server, String user, String password) {
 		try {
-			Class.forName("com.simba.spark.jdbc.Driver");
+			Class.forName("com.databricks.client.jdbc.Driver");
 		} catch (ClassNotFoundException e1) {
-			throw new RuntimeException("Cannot find spark JDBC driver.");
+			throw new RuntimeException("Cannot find databricks JDBC driver.");
 		}
 
                 String url = "dbc:spark://" + server + ":443/default;transportMode=http;ssl=1;httpPath=" + user + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
