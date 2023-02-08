@@ -189,13 +189,15 @@ public class RichConnection implements Closeable {
 	 * @param tableName
 	 * @return
 	 */
-	public long getTableSize(String tableName) {
+	public long getTableSize(String tableName, String schema) {
 		QueryResult qr;
 		long returnVal;
 		if (dbType == DbType.MSSQL || dbType == DbType.PDW || dbType == DbType.AZURE)
 			qr = query("SELECT COUNT_BIG(*) FROM [" + tableName.replaceAll("\\.", "].[") + "];");
 		else if (dbType == DbType.MSACCESS)
 			qr = query("SELECT COUNT(*) FROM [" + tableName + "];");
+                else if (dbType == DbType.DATABRICKS)
+			qr = query("SELECT COUNT(*) FROM " + schema + "." + tableName + ";");
 		else
 			qr = query("SELECT COUNT(*) FROM " + tableName + ";");
 		try {

@@ -417,7 +417,7 @@ public class SourceDataScan {
 	private List<FieldInfo> processDatabaseTable(String table, String schema, RichConnection connection) {
 		logger.info("Scanning table " + table);
 
-		long rowCount = connection.getTableSize(table);
+		long rowCount = connection.getTableSize(table, schema);
 		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table, schema);
 		if (scanValues) {
 			int actualCount = 0;
@@ -496,7 +496,7 @@ public class SourceDataScan {
 				while (rs.next()) {
 					FieldInfo fieldInfo = new FieldInfo(rs.getString("COLUMN_NAME"));
 					fieldInfo.type = rs.getString("TYPE_NAME");
-					fieldInfo.rowCount = connection.getTableSize(table);
+					fieldInfo.rowCount = connection.getTableSize(table, schema);
 					fieldInfos.add(fieldInfo);
 				}
 			} catch (SQLException e) {
@@ -555,7 +555,7 @@ public class SourceDataScan {
 				}
                                 
                                 
-				fieldInfo.rowCount = connection.getTableSize(table);
+				fieldInfo.rowCount = connection.getTableSize(table, schema);
 				fieldInfos.add(fieldInfo);
 			}
 		}
