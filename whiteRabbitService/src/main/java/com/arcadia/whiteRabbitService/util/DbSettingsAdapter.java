@@ -45,7 +45,8 @@ public final class DbSettingsAdapter {
 
     private static final List<DbType> dbRequireSchema = List.of(
             DbType.POSTGRESQL,
-            DbType.ORACLE
+            DbType.ORACLE,
+            DbType.DATABRICKS
     );
 
     /**

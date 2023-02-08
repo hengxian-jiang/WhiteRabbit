@@ -158,7 +158,7 @@ public class RichConnection implements Closeable {
 		} else if (dbType == DbType.BIGQUERY) {
 			query = "SELECT table_name from " + database + ".INFORMATION_SCHEMA.TABLES ORDER BY table_name;";
                 } else if (dbType == DbType.DATABRICKS) {
-			query = "show tables " + database + ";";
+			query = "show tables in " + database + ";";
 		}
 
 		for (Row row : query(query)) {
