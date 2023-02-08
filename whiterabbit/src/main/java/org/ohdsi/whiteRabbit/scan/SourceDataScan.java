@@ -149,7 +149,7 @@ public class SourceDataScan {
 
 			for (String table : dbSettings.tables) {
 				interrupter.checkWasInterrupted();
-				tableToFieldInfos.put(new Table(table), processDatabaseTable(table, connection));
+				tableToFieldInfos.put(new Table(table), processDatabaseTable(table, dbSettings.database, connection));
 				logger.incrementScannedItems();
 				logger.info("Scanned table " + table);
 			}
@@ -414,16 +414,16 @@ public class SourceDataScan {
 				.removeIf(stringListEntry -> stringListEntry.getValue().size() == 0);
 	}
 
-	private List<FieldInfo> processDatabaseTable(String table, RichConnection connection) {
+	private List<FieldInfo> processDatabaseTable(String table, String schema, RichConnection connection) {
 		logger.info("Scanning table " + table);
 
 		long rowCount = connection.getTableSize(table);
-		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table);
+		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table, schema);
 		if (scanValues) {
 			int actualCount = 0;
 			QueryResult queryResult = null;
 			try {
-				queryResult = fetchRowsFromTable(connection, table, rowCount);
+				queryResult = fetchRowsFromTable(connection, table, schema, rowCount);
 				for (org.ohdsi.utilities.files.Row row : queryResult) {
 					for (FieldInfo fieldInfo : fieldInfos) {
 						fieldInfo.processValue(row.get(fieldInfo.name));
@@ -448,7 +448,7 @@ public class SourceDataScan {
 		return fieldInfos;
 	}
 
-	private QueryResult fetchRowsFromTable(RichConnection connection, String table, long rowCount) {
+	private QueryResult fetchRowsFromTable(RichConnection connection, String table, String schema, long rowCount) {
 		String query = null;
 
 		if (sampleSize == -1) {
@@ -480,14 +480,14 @@ public class SourceDataScan {
 			else if (dbType == DbType.BIGQUERY)
 				query = "SELECT * FROM " + table + " ORDER BY RAND() LIMIT " + sampleSize;
                         else if (dbType == DbType.DATABRICKS)
-				query = "SELECT * FROM " + table + " ORDER BY RAND() LIMIT " + sampleSize;
+				query = "SELECT * FROM " + schema + "." + table + " ORDER BY RAND() LIMIT " + sampleSize;
 		}
 		// logger.log("SQL: " + query);
 		return connection.query(query);
 
 	}
 
-	private List<FieldInfo> fetchTableStructure(RichConnection connection, String table) {
+	private List<FieldInfo> fetchTableStructure(RichConnection connection, String table, String schema) {
 		List<FieldInfo> fieldInfos = new ArrayList<>();
 
 		if (dbType == DbType.MSACCESS) {
@@ -531,7 +531,7 @@ public class SourceDataScan {
 				query = "SELECT column_name AS COLUMN_NAME, data_type as DATA_TYPE FROM " + database + ".INFORMATION_SCHEMA.COLUMNS WHERE table_name = \"" + table + "\";";
                         }
                         else if (dbType == DbType.DATABRICKS) {
-                            query = "DESCRIBE TABLE " + table + ";";
+                            query = "DESCRIBE TABLE " + schema + "." + table + ";";
 			}
 
 			for (org.ohdsi.utilities.files.Row row : connection.query(query)) {
