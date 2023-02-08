@@ -261,7 +261,7 @@ public class DBConnector {
 		}
                 
                 String host = server.split("/")[0];
-                String url = "jdbc:databricks://" + host + ":443/default;transportMode=http;ssl=1;httpPath=" + httppath + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
+                String url = "jdbc:databricks://" + host + ":443/default;transportMode=http;ssl=1;EnableArrow=0;httpPath=" + httppath + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
 
 		try {
 			return DriverManager.getConnection(url);
