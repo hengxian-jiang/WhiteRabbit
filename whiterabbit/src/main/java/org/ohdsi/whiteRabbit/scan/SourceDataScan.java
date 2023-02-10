@@ -540,16 +540,14 @@ public class SourceDataScan {
 				if (dbType == DbType.TERADATA) {
 					fieldInfo = new FieldInfo(row.get("COLUMNNAME"));
 				} else if (dbType == DbType.DATABRICKS) {
-					fieldInfo = new FieldInfo(row.get("col_name"));
+					fieldInfo = new FieldInfo(row.get("COL_NAME"));
 				}  
                                 else {
 					fieldInfo = new FieldInfo(row.get("COLUMN_NAME"));
 				}
 				if (dbType == DbType.TERADATA) {
 					fieldInfo.type = row.get("COLUMNTYPE");
-				} else if (dbType == DbType.DATABRICKS) {
-					fieldInfo.type = row.get("data_type");
-				} 
+				}  
                                 else {
 					fieldInfo.type = row.get("DATA_TYPE");
 				}
