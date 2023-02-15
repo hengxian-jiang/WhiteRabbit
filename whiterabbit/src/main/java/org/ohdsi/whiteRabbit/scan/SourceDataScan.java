@@ -143,13 +143,13 @@ public class SourceDataScan {
 			dbSettings.domain = dbSettings.database;
 		}
 
-		try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType)) {
+		try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType, dbSettings.httppath)) {
 			connection.setVerbose(false);
 			connection.use(adaptSchemaNameForPostgres(dbSettings, dbSettings.database));
 
 			for (String table : dbSettings.tables) {
 				interrupter.checkWasInterrupted();
-				tableToFieldInfos.put(new Table(table), processDatabaseTable(table, connection));
+				tableToFieldInfos.put(new Table(table), processDatabaseTable(table, dbSettings.database, connection));
 				logger.incrementScannedItems();
 				logger.info("Scanned table " + table);
 			}
@@ -414,16 +414,16 @@ public class SourceDataScan {
 				.removeIf(stringListEntry -> stringListEntry.getValue().size() == 0);
 	}
 
-	private List<FieldInfo> processDatabaseTable(String table, RichConnection connection) {
+	private List<FieldInfo> processDatabaseTable(String table, String schema, RichConnection connection) {
 		logger.info("Scanning table " + table);
 
-		long rowCount = connection.getTableSize(table);
-		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table);
+		long rowCount = connection.getTableSize(table, schema);
+		List<FieldInfo> fieldInfos = fetchTableStructure(connection, table, schema);
 		if (scanValues) {
 			int actualCount = 0;
 			QueryResult queryResult = null;
 			try {
-				queryResult = fetchRowsFromTable(connection, table, rowCount);
+				queryResult = fetchRowsFromTable(connection, table, schema, rowCount);
 				for (org.ohdsi.utilities.files.Row row : queryResult) {
 					for (FieldInfo fieldInfo : fieldInfos) {
 						fieldInfo.processValue(row.get(fieldInfo.name));
@@ -448,7 +448,7 @@ public class SourceDataScan {
 		return fieldInfos;
 	}
 
-	private QueryResult fetchRowsFromTable(RichConnection connection, String table, long rowCount) {
+	private QueryResult fetchRowsFromTable(RichConnection connection, String table, String schema, long rowCount) {
 		String query = null;
 
 		if (sampleSize == -1) {
@@ -479,13 +479,15 @@ public class SourceDataScan {
 				query = "SELECT " + "TOP " + sampleSize + " * FROM [" + table + "]";
 			else if (dbType == DbType.BIGQUERY)
 				query = "SELECT * FROM " + table + " ORDER BY RAND() LIMIT " + sampleSize;
+                        else if (dbType == DbType.DATABRICKS)
+				query = "SELECT * FROM " + schema + "." + table + " ORDER BY RAND() LIMIT " + sampleSize;
 		}
 		// logger.log("SQL: " + query);
 		return connection.query(query);
 
 	}
 
-	private List<FieldInfo> fetchTableStructure(RichConnection connection, String table) {
+	private List<FieldInfo> fetchTableStructure(RichConnection connection, String table, String schema) {
 		List<FieldInfo> fieldInfos = new ArrayList<>();
 
 		if (dbType == DbType.MSACCESS) {
@@ -494,7 +496,7 @@ public class SourceDataScan {
 				while (rs.next()) {
 					FieldInfo fieldInfo = new FieldInfo(rs.getString("COLUMN_NAME"));
 					fieldInfo.type = rs.getString("TYPE_NAME");
-					fieldInfo.rowCount = connection.getTableSize(table);
+					fieldInfo.rowCount = connection.getTableSize(table, schema);
 					fieldInfos.add(fieldInfo);
 				}
 			} catch (SQLException e) {
@@ -527,6 +529,9 @@ public class SourceDataScan {
 			}
 			else if (dbType == DbType.BIGQUERY) {
 				query = "SELECT column_name AS COLUMN_NAME, data_type as DATA_TYPE FROM " + database + ".INFORMATION_SCHEMA.COLUMNS WHERE table_name = \"" + table + "\";";
+                        }
+                        else if (dbType == DbType.DATABRICKS) {
+                            query = "DESCRIBE TABLE " + schema + "." + table + ";";
 			}
 
 			for (org.ohdsi.utilities.files.Row row : connection.query(query)) {
@@ -534,15 +539,21 @@ public class SourceDataScan {
 				FieldInfo fieldInfo;
 				if (dbType == DbType.TERADATA) {
 					fieldInfo = new FieldInfo(row.get("COLUMNNAME"));
-				} else {
+				} else if (dbType == DbType.DATABRICKS) {
+					fieldInfo = new FieldInfo(row.get("COL_NAME"));
+				}  
+                                else {
 					fieldInfo = new FieldInfo(row.get("COLUMN_NAME"));
 				}
 				if (dbType == DbType.TERADATA) {
 					fieldInfo.type = row.get("COLUMNTYPE");
-				} else {
+				}  
+                                else {
 					fieldInfo.type = row.get("DATA_TYPE");
 				}
-				fieldInfo.rowCount = connection.getTableSize(table);
+                                
+                                
+				fieldInfo.rowCount = connection.getTableSize(table, schema);
 				fieldInfos.add(fieldInfo);
 			}
 		}

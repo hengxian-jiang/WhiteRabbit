@@ -31,7 +31,7 @@ public class DBConnector {
 	}
 
 	// If dbType.BIGQUERY: domain field has been replaced with  database field
-	public static Connection connect(String server, String domain, String user, String password, DbType dbType) {
+	public static Connection connect(String server, String domain, String user, String password, DbType dbType, String httppath) {
 		if (dbType.equals(DbType.MYSQL))
 			return DBConnector.connectToMySQL(server, user, password);
 		else if (dbType.equals(DbType.MSSQL) || dbType.equals(DbType.PDW) || dbType.equals(DbType.AZURE))
@@ -48,6 +48,8 @@ public class DBConnector {
 			return DBConnector.connectToTeradata(server, user, password);
 		else if (dbType.equals(DbType.BIGQUERY))
 			return DBConnector.connectToBigQuery(server, domain, user, password);
+                else if (dbType.equals(DbType.DATABRICKS))
+			return DBConnector.connectToDatabricks(server, user, password, httppath);
 		else
 			return null;
 	}
@@ -248,6 +250,23 @@ public class DBConnector {
 			return DriverManager.getConnection(url);
 		} catch (SQLException e1) {
 			throw new RuntimeException("Simba URL failed: Cannot connect to DB server: " + e1.getMessage());
+		}
+	}
+        
+        public static Connection connectToDatabricks(String server, String user, String password, String httppath) {
+		try {
+			Class.forName("com.databricks.client.jdbc.Driver");
+		} catch (ClassNotFoundException e1) {
+			throw new RuntimeException("Cannot find databricks JDBC driver.");
+		}
+                
+                String host = server.split("/")[0];
+                String url = "jdbc:databricks://" + host + ":443/default;transportMode=http;ssl=1;EnableArrow=0;httpPath=" + httppath + ";AuthMech=3;UseNativeQuery=1;UID=token;PWD=" + password;
+
+		try {
+			return DriverManager.getConnection(url);
+		} catch (SQLException e1) {
+			throw new RuntimeException("Cannot connect to DB server: " + e1.getMessage());
 		}
 	}
 }

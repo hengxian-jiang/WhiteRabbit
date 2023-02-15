@@ -29,7 +29,8 @@ public final class DbSettingsAdapter {
             DbType.AZURE, dbType -> dbType.equalsIgnoreCase("Azure"),
             DbType.MSACCESS, dbType -> dbType.equalsIgnoreCase("MS Access"),
             DbType.TERADATA, dbType -> dbType.equalsIgnoreCase("Teradata"),
-            DbType.BIGQUERY, dbType -> dbType.equalsIgnoreCase("BigQuery")
+            DbType.BIGQUERY, dbType -> dbType.equalsIgnoreCase("BigQuery"),
+            DbType.DATABRICKS, dbType -> dbType.equalsIgnoreCase("Databricks")
     );
 
     private static final List<DbType> dbTypesHasWindowsAuthentication = List.of(
@@ -44,7 +45,8 @@ public final class DbSettingsAdapter {
 
     private static final List<DbType> dbRequireSchema = List.of(
             DbType.POSTGRESQL,
-            DbType.ORACLE
+            DbType.ORACLE,
+            DbType.DATABRICKS
     );
 
     /**
@@ -64,6 +66,7 @@ public final class DbSettingsAdapter {
         dbSettings.server = adaptServer(dbSetting.getServer(), dbSetting.getPort());
         dbSettings.database = dbSetting.getDatabase();
         dbSettings.dbType = adaptDbType(dbSetting.getDbType());
+        dbSettings.httppath = dbSetting.getHttppath();
 
         if (dbSettings.dbType == DbType.MSSQL || dbSettings.dbType == DbType.AZURE) {
             dbSettings.server = String.format("%s;database=%s", dbSettings.server, dbSettings.database);
@@ -125,7 +128,8 @@ public final class DbSettingsAdapter {
                 try (RichConnection connection = new RichConnection(
                         dbSettings.server, dbSettings.domain,
                         dbSettings.user, dbSettings.password,
-                        dbSettings.dbType
+                        dbSettings.dbType,
+                        dbSettings.httppath
                 )) {
                     dbSettings.tables.addAll(connection.getTableNames(dbSettings.database));
                 }

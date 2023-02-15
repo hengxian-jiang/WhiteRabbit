@@ -32,10 +32,12 @@ public class RichConnection implements Closeable {
 	private boolean					verbose				= false;
 	private static DecimalFormat	decimalFormat		= new DecimalFormat("#.#");
 	private DbType					dbType;
+        private String httppath;
 
-	public RichConnection(String server, String domain, String user, String password, DbType dbType) {
-		this.connection = DBConnector.connect(server, domain, user, password, dbType);
+	public RichConnection(String server, String domain, String user, String password, DbType dbType, String httppath) {
+		this.connection = DBConnector.connect(server, domain, user, password, dbType, httppath);
 		this.dbType = dbType;
+                this.httppath = httppath;
 	}
 
 	/**
@@ -155,10 +157,17 @@ public class RichConnection implements Closeable {
 			query = "SELECT TableName from dbc.tables WHERE tablekind IN ('T','V') and databasename='" + database + "'";
 		} else if (dbType == DbType.BIGQUERY) {
 			query = "SELECT table_name from " + database + ".INFORMATION_SCHEMA.TABLES ORDER BY table_name;";
+                } else if (dbType == DbType.DATABRICKS) {
+			query = "show tables in " + database + ";";
 		}
 
-		for (Row row : query(query))
-			names.add(row.get(row.getFieldNames().get(0)));
+		for (Row row : query(query)) {
+                    if (dbType == DbType.DATABRICKS) {
+			names.add(row.get(row.getFieldNames().get(1)));
+                    } else {
+                        names.add(row.get(row.getFieldNames().get(0)));
+                    }
+                }
 		return names;
 	}
 
@@ -180,13 +189,15 @@ public class RichConnection implements Closeable {
 	 * @param tableName
 	 * @return
 	 */
-	public long getTableSize(String tableName) {
+	public long getTableSize(String tableName, String schema) {
 		QueryResult qr;
 		long returnVal;
 		if (dbType == DbType.MSSQL || dbType == DbType.PDW || dbType == DbType.AZURE)
 			qr = query("SELECT COUNT_BIG(*) FROM [" + tableName.replaceAll("\\.", "].[") + "];");
 		else if (dbType == DbType.MSACCESS)
 			qr = query("SELECT COUNT(*) FROM [" + tableName + "];");
+                else if (dbType == DbType.DATABRICKS)
+			qr = query("SELECT COUNT(*) FROM " + schema + "." + tableName + ";");
 		else
 			qr = query("SELECT COUNT(*) FROM " + tableName + ";");
 		try {
