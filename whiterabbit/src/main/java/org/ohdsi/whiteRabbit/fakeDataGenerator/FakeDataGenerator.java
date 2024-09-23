@@ -78,7 +78,7 @@ public class FakeDataGenerator {
 		logger.setItemsCount(database.getTables().size());
 
 		if (targetType == DbSettings.SourceType.DATABASE) {
-			try(RichConnection conn = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType, dbSettings.httppath)) {
+			try(RichConnection conn = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType)) {
 				connection = conn;
 				connection.use(dbSettings.database);
 				for (Table table : database.getTables()) {

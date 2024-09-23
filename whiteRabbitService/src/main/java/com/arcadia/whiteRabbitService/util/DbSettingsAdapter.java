@@ -66,7 +66,6 @@ public final class DbSettingsAdapter {
         dbSettings.server = adaptServer(dbSetting.getServer(), dbSetting.getPort());
         dbSettings.database = dbSetting.getDatabase();
         dbSettings.dbType = adaptDbType(dbSetting.getDbType());
-        dbSettings.httppath = dbSetting.getHttppath();
 
         if (dbSettings.dbType == DbType.MSSQL || dbSettings.dbType == DbType.AZURE) {
             dbSettings.server = String.format("%s;database=%s", dbSettings.server, dbSettings.database);
@@ -128,8 +127,7 @@ public final class DbSettingsAdapter {
                 try (RichConnection connection = new RichConnection(
                         dbSettings.server, dbSettings.domain,
                         dbSettings.user, dbSettings.password,
-                        dbSettings.dbType,
-                        dbSettings.httppath
+                        dbSettings.dbType
                 )) {
                     dbSettings.tables.addAll(connection.getTableNames(dbSettings.database));
                 }

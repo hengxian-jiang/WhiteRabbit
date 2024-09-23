@@ -10,8 +10,7 @@ public class RichConnectionUtil {
                 dbSettings.domain,
                 dbSettings.user,
                 dbSettings.password,
-                dbSettings.dbType,
-                dbSettings.httppath
+                dbSettings.dbType
         );
     }
 }

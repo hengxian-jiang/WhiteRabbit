@@ -31,7 +31,7 @@ public class DBConnector {
 	}
 
 	// If dbType.BIGQUERY: domain field has been replaced with  database field
-	public static Connection connect(String server, String domain, String user, String password, DbType dbType, String httppath) {
+	public static Connection connect(String server, String domain, String user, String password, DbType dbType) {
 		if (dbType.equals(DbType.MYSQL))
 			return DBConnector.connectToMySQL(server, user, password);
 		else if (dbType.equals(DbType.MSSQL) || dbType.equals(DbType.PDW) || dbType.equals(DbType.AZURE))
@@ -48,8 +48,6 @@ public class DBConnector {
 			return DBConnector.connectToTeradata(server, user, password);
 		else if (dbType.equals(DbType.BIGQUERY))
 			return DBConnector.connectToBigQuery(server, domain, user, password);
-                else if (dbType.equals(DbType.DATABRICKS))
-			return DBConnector.connectToDatabricks(server, user, password, httppath);
 		else
 			return null;
 	}
