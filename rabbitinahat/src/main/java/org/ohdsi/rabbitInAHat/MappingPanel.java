@@ -37,16 +37,19 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Hashtable;
 
 import javax.swing.AbstractAction;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import org.ohdsi.rabbitInAHat.Arrow.HighlightStatus;
-import org.ohdsi.rabbitInAHat.dataModel.*;
+import org.ohdsi.rabbitInAHat.dataModel.ItemToItemMap;
+import org.ohdsi.rabbitInAHat.dataModel.MappableItem;
+import org.ohdsi.rabbitInAHat.dataModel.Mapping;
+import org.ohdsi.rabbitInAHat.dataModel.Table;
 import org.ohdsi.utilities.collections.IntegerComparator;
 
 public class MappingPanel extends JPanel implements MouseListener, MouseMotionListener {
