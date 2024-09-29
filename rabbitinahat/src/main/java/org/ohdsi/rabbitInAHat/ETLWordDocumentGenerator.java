@@ -19,9 +19,8 @@ package org.ohdsi.rabbitInAHat;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -40,30 +39,39 @@ import org.ohdsi.rabbitInAHat.dataModel.Mapping;
 import org.ohdsi.rabbitInAHat.dataModel.Table;
 
 public class ETLWordDocumentGenerator {
-	
-	public static void generate(ETL etl, String filename, boolean includeCounts) {
-		try {
-			CustomXWPFDocument document = new CustomXWPFDocument();
-			
-			addTableLevelSection(document, etl);
-			
-			for (Table targetTable : etl.getTargetDatabase().getTables())
-				addTargetTableSection(document, etl, targetTable);
+	public static ByteArrayOutputStream generate(ETL etl, String filename, boolean includeCounts) {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    
+    try {
+        CustomXWPFDocument document = new CustomXWPFDocument();
+        
+        addTableLevelSection(document, etl);
+        
+        for (Table targetTable : etl.getTargetDatabase().getTables()) {
+            addTargetTableSection(document, etl, targetTable);
+        }
 
-			if (includeCounts) addSourceTablesAppendix(document, etl);
-			
-			document.write(new FileOutputStream(new File(filename)));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InvalidFormatException e) {
-			e.printStackTrace();
-		}
-	}
+        if (includeCounts) {
+            addSourceTablesAppendix(document, etl);
+        }
 
-	public static void generate(ETL etl, String filename) {
-		generate(etl, filename, true);
+        // Write the document to the ByteArrayOutputStream instead of a file
+        document.write(outputStream);
+        document.close(); // Close the document to avoid memory leaks
+        
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    } catch (IOException e) {
+        e.printStackTrace();
+    } catch (InvalidFormatException e) {
+        e.printStackTrace();
+    }
+    
+    return outputStream;
+}
+
+	public static ByteArrayOutputStream generate(ETL etl, String filename) {
+		return generate(etl, filename, true);
 	}
 
 	private static void addSourceTablesAppendix(CustomXWPFDocument document, ETL etl) {

@@ -1,0 +1,28 @@
+networks:
+  perseus-net:
+services:
+  shareddb:
+    # image: perseushub/shareddb:latest
+    build: ./shared-db
+    container_name: shareddb
+    volumes:
+      - shareddb:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - perseus-net
+  white-rabbit:
+    # image: perseushub/white-rabbit:latest
+    build: .
+    container_name:
+      white-rabbit-test
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - shareddb
+    networks:
+      - perseus-net
+volumes:
+  shareddb:

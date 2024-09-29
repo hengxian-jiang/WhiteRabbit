@@ -143,7 +143,7 @@ public class SourceDataScan {
 			dbSettings.domain = dbSettings.database;
 		}
 
-		try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType, dbSettings.httppath)) {
+		try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType)) {
 			connection.setVerbose(false);
 			connection.use(adaptSchemaNameForPostgres(dbSettings, dbSettings.database));
 

@@ -181,7 +181,7 @@ public class WhiteRabbitMain implements ActionListener {
 
 		if (iniFile.get("TABLES_TO_SCAN").equalsIgnoreCase("*")) {
 			if (dbSettings.sourceType == DbSettings.SourceType.DATABASE) {
-				try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType, dbSettings.httppath)) {
+				try (RichConnection connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType)) {
 					dbSettings.tables.addAll(connection.getTableNames(dbSettings.database));
 				}
 			} else {
@@ -721,7 +721,7 @@ public class WhiteRabbitMain implements ActionListener {
 		DbSettings sourceDbSettings = getSourceDbSettings();
 		if (sourceDbSettings != null) {
 			RichConnection connection = new RichConnection(sourceDbSettings.server, sourceDbSettings.domain, sourceDbSettings.user, sourceDbSettings.password,
-					sourceDbSettings.dbType, sourceDbSettings.httppath);
+					sourceDbSettings.dbType);
 			for (String table : connection.getTableNames(sourceDbSettings.database)) {
 				if (!tables.contains(table))
 					tables.add((String) table);
@@ -757,7 +757,7 @@ public class WhiteRabbitMain implements ActionListener {
 				}
 			} else if (sourceDbSettings.sourceType == DbSettings.SourceType.DATABASE) {
 				RichConnection connection = new RichConnection(sourceDbSettings.server, sourceDbSettings.domain, sourceDbSettings.user,
-						sourceDbSettings.password, sourceDbSettings.dbType, sourceDbSettings.httppath);
+						sourceDbSettings.password, sourceDbSettings.dbType);
 				String tableNames = StringUtilities.join(connection.getTableNames(sourceDbSettings.database), "\t");
 				if (tableNames.length() == 0) {
 					JOptionPane.showMessageDialog(frame, "No tables found in database " + sourceDbSettings.database, "Error fetching table names",
@@ -861,7 +861,7 @@ public class WhiteRabbitMain implements ActionListener {
 
 			RichConnection connection;
 			try {
-			    connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType, dbSettings.httppath);
+			    connection = new RichConnection(dbSettings.server, dbSettings.domain, dbSettings.user, dbSettings.password, dbSettings.dbType);
 			} catch (Exception e) {
 				String message = "Could not connect: " + e.getMessage();
 				JOptionPane.showMessageDialog(frame, StringUtilities.wordWrap(message, 80), "Error connecting to server", JOptionPane.ERROR_MESSAGE);
